@@ -41,6 +41,7 @@ struct gbm_surface;
 
 struct waffle_gbm_display {
     struct gbm_device *gbm_device;
+    struct waffle_drm_display *drm_display;
     EGLDisplay egl_display;
 };
 

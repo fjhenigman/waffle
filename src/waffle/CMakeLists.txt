@@ -23,6 +23,7 @@ include_directories(
     ${gbm_INCLUDE_DIRS}
     ${gl_INCLUDE_DIRS}
     ${libudev_INCLUDE_DIRS}
+    ${libdrm_INCLUDE_DIRS}
     ${wayland-client_INCLUDE_DIRS}
     ${wayland-egl_INCLUDE_DIRS}
     ${x11-xcb_INCLUDE_DIRS}
@@ -58,6 +59,7 @@ if(waffle_on_linux)
         list(APPEND waffle_libdeps
             ${gbm_LDFLAGS}
             ${libudev_LDFLAGS}
+            ${libdrm_LDFLAGS}
             )
     endif()
 endif()

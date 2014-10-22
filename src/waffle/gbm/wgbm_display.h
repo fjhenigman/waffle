@@ -34,10 +34,12 @@
 
 struct wcore_platform;
 struct gbm_device;
+struct drm_display;
 
 struct wgbm_display {
     struct gbm_device *gbm_device;
     struct wegl_display wegl;
+    struct drm_display *drm_display;
 };
 
 static inline struct wgbm_display*
