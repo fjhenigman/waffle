@@ -51,6 +51,8 @@ static void
 removeXcodeArgs(int *argc, char **argv);
 #endif
 
+#include "eglinfo.h"
+#include "glxinfo.h"
 #include "waffle.h"
 
 static const char *usage_message =
@@ -495,6 +497,35 @@ print_extensions(bool use_stringi)
             printf("%s", extensions);
     }
     printf("\n");
+}
+
+static void
+print_platform_specific(
+        int platform,
+        struct waffle_display *dpy,
+        struct waffle_context *ctx,
+        bool verbose)
+{
+    union waffle_native_display *ndpy = waffle_display_get_native(dpy);
+    if (!ndpy) {
+        error_printf("Wflinfo", "failed to get native display");
+        return;
+    }
+
+#ifdef WAFFLE_HAS_GBM
+    if (platform == WAFFLE_PLATFORM_GBM)
+        gbm_info(ndpy, ctx, verbose);
+#endif
+#ifdef WAFFLE_HAS_GLX
+    if (platform == WAFFLE_PLATFORM_GLX)
+        glx_info(ndpy, ctx, verbose);
+#endif
+#ifdef WAFFLE_HAS_X11_EGL
+    if (platform == WAFFLE_PLATFORM_X11_EGL)
+        x11_egl_info(ndpy, ctx, verbose);
+#endif
+
+    free(ndpy);
 }
 
 static void
@@ -1134,7 +1165,7 @@ main(int argc, char **argv)
         error_waffle();
 
     if (opts.specific) {
-        //TODO print platform-specific information
+        print_platform_specific(opts.platform, dpy, ctx, opts.verbose);
     }
 
     ok = waffle_make_current(dpy, NULL, NULL);
