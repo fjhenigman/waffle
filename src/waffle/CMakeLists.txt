@@ -13,8 +13,10 @@ include_directories(
     cgl
     core
     egl
+    gbm
     glx
     linux
+    null
     wayland
     wgl
     x11
@@ -24,7 +26,9 @@ include_directories(
     ${gbm_INCLUDE_DIRS}
     ${gl_INCLUDE_DIRS}
     ${GLEXT_INCLUDE_DIR}
+    ${libdrm_INCLUDE_DIRS}
     ${libudev_INCLUDE_DIRS}
+    ${null_INCLUDE_DIRS}
     ${wayland-client_INCLUDE_DIRS}
     ${wayland-egl_INCLUDE_DIRS}
     ${x11-xcb_INCLUDE_DIRS}
@@ -52,6 +56,12 @@ if(waffle_on_linux)
     endif()
     if(waffle_has_gbm)
         list(APPEND waffle_libdeps
+            ${libudev_LDFLAGS}
+            )
+    endif()
+    if(waffle_has_null)
+        list(APPEND waffle_libdeps
+            ${libdrm_LDFLAGS}
             ${libudev_LDFLAGS}
             )
     endif()
@@ -171,6 +181,15 @@ if(waffle_on_windows)
     list(APPEND waffle_libdeps
         opengl32.lib
         )
+endif()
+
+if(waffle_has_null)
+    list(APPEND waffle_sources
+        null/wnull_context.c
+        null/wnull_display.c
+        null/wnull_platform.c
+        null/wnull_window.c
+    )
 endif()
 
 # CMake will pass to the C compiler only C sources. CMake does not recognize the

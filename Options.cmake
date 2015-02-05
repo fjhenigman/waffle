@@ -23,11 +23,18 @@ if(waffle_on_linux)
         set(gbm_default OFF)
     endif()
 
+    if(gbm_FOUND AND libudev_FOUND AND egl_FOUND AND libdrm_FOUND)
+        set(null_default ON)
+    else()
+        set(null_default OFF)
+    endif()
+
     # On Linux, you must enable at least one of the below options.
     option(waffle_has_glx "Build support for GLX" ${glx_default})
     option(waffle_has_wayland "Build support for Wayland" ${wayland_default})
     option(waffle_has_x11_egl "Build support for X11/EGL" ${x11_egl_default})
     option(waffle_has_gbm "Build support for GBM" ${gbm_default})
+    option(waffle_has_null "Build support for Null" ${null_default})
 endif()
 
 option(waffle_build_tests "Build tests" ON)

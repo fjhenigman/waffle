@@ -104,6 +104,7 @@ enum waffle_enum {
         WAFFLE_PLATFORM_X11_EGL                                 = 0x0015,
         WAFFLE_PLATFORM_GBM                                     = 0x0016,
         WAFFLE_PLATFORM_WGL                                     = 0x0017,
+        WAFFLE_PLATFORM_NULL                                    = 0x0019,
 
     // ------------------------------------------------------------------
     // For waffle_config_choose()
@@ -277,12 +278,17 @@ struct waffle_x11_egl_config;
 struct waffle_x11_egl_context;
 struct waffle_x11_egl_display;
 struct waffle_x11_egl_window;
+struct waffle_null_config;
+struct waffle_null_context;
+struct waffle_null_display;
+struct waffle_null_window;
 
 union waffle_native_display {
     struct waffle_gbm_display *gbm;
     struct waffle_glx_display *glx;
     struct waffle_x11_egl_display *x11_egl;
     struct waffle_wayland_display *wayland;
+    struct waffle_null_display *null;
 };
 
 union waffle_native_config {
@@ -290,6 +296,7 @@ union waffle_native_config {
     struct waffle_glx_config *glx;
     struct waffle_x11_egl_config *x11_egl;
     struct waffle_wayland_config *wayland;
+    struct waffle_null_config *null;
 };
 
 union waffle_native_context {
@@ -297,6 +304,7 @@ union waffle_native_context {
     struct waffle_glx_context *glx;
     struct waffle_x11_egl_context *x11_egl;
     struct waffle_wayland_context *wayland;
+    struct waffle_null_context *null;
 };
 
 union waffle_native_window {
@@ -304,6 +312,7 @@ union waffle_native_window {
     struct waffle_glx_window *glx;
     struct waffle_x11_egl_window *x11_egl;
     struct waffle_wayland_window *wayland;
+    struct waffle_null_window *null;
 };
 
 // ---------------------------------------------------------------------------
