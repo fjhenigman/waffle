@@ -5,6 +5,7 @@ EXPORTS
     waffle_error_get_info
     waffle_error_to_string
     waffle_enum_to_string
+    waffle_string_to_enum
     waffle_init
     waffle_teardown
     waffle_make_current

@@ -34,3 +34,10 @@ waffle_enum_to_string(int32_t e)
     wcore_error_reset();
     return wcore_enum_to_string(e);
 }
+
+WAFFLE_API bool
+waffle_string_to_enum(const char *s, int32_t *e)
+{
+    wcore_error_reset();
+    return wcore_string_to_enum(s, e);
+}

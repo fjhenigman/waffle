@@ -24,6 +24,7 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <stdlib.h>
+#include <string.h>
 
 #include "wcore_error.h"
 #include "wcore_util.h"
@@ -74,6 +75,14 @@ struct enum_map_entry {
 };
 
 static int
+enum_cmp_name(const void *v1, const void *v2)
+{
+    const struct enum_map_entry *e1 = (const struct enum_map_entry *) v1;
+    const struct enum_map_entry *e2 = (const struct enum_map_entry *) v2;
+    return strcasecmp(e1->name, e2->name);
+}
+
+static int
 enum_cmp_value(const void *v1, const void *v2)
 {
     const struct enum_map_entry *e1 = (const struct enum_map_entry *) v1;
@@ -82,6 +91,14 @@ enum_cmp_value(const void *v1, const void *v2)
 }
 
 #define NAME_VALUE(name, value) { #name, value },
+
+static struct enum_map_entry enum_map_name[] = {
+    WAFFLE_ENUM_LIST(NAME_VALUE)
+    // aliases
+    { "WAFFLE_CONTEXT_OPENGLES1", WAFFLE_CONTEXT_OPENGL_ES1 },
+    { "WAFFLE_CONTEXT_OPENGLES2", WAFFLE_CONTEXT_OPENGL_ES2 },
+    { "WAFFLE_CONTEXT_OPENGLES3", WAFFLE_CONTEXT_OPENGL_ES3 },
+};
 
 static struct enum_map_entry enum_map_value[] = {
     WAFFLE_ENUM_LIST(NAME_VALUE)
@@ -97,6 +114,8 @@ enum_sort()
     static bool sorted = false;
     if (sorted)
         return;
+    qsort(enum_map_name, ARRAY_SIZE(enum_map_name), sizeof(enum_map_name[0]),
+          enum_cmp_name);
     qsort(enum_map_value, ARRAY_SIZE(enum_map_value), sizeof(enum_map_value[0]),
           enum_cmp_value);
     sorted = true;
@@ -116,6 +135,23 @@ wcore_enum_to_string(int32_t e)
         return NULL;
 
     return found->name;
+}
+
+bool
+wcore_string_to_enum(const char *s, int32_t *e)
+{
+    enum_sort();
+    struct enum_map_entry key = { .name = s };
+    struct enum_map_entry *found = bsearch(&key,
+                                           enum_map_name,
+                                           ARRAY_SIZE(enum_map_name),
+                                           sizeof(enum_map_name[0]),
+                                           enum_cmp_name);
+    if (!found)
+        return false;
+
+    *e = found->value;
+    return true;
 }
 
 #undef ARRAY_SIZE

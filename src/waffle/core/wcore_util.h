@@ -112,6 +112,9 @@ wcore_calloc(size_t size);
 const char*
 wcore_enum_to_string(int32_t e);
 
+bool
+wcore_string_to_enum(const char *s, int32_t *e);
+
 #ifdef __cplusplus
 }
 #endif

@@ -189,6 +189,11 @@ WAFFLE_ENUM_LIST(ENUM_ITEM)
 const char*
 waffle_enum_to_string(int32_t e);
 
+#if WAFFLE_API_VERSION >= 0x0106
+bool
+waffle_string_to_enum(const char *s, int32_t *e);
+#endif
+
 // ---------------------------------------------------------------------------
 
 bool

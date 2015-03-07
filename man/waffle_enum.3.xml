@@ -23,6 +23,7 @@
   <refnamediv>
     <refname>waffle_enum</refname>
     <refname>waffle_enum_to_string</refname>
+    <refname>waffle_string_to_enum</refname>
     <refpurpose>Listing of non-error enums and associated utility functions</refpurpose>
   </refnamediv>
 
@@ -49,6 +50,12 @@ enum waffle_enum {...};
         <paramdef>int32_t <parameter>e</parameter></paramdef>
       </funcprototype>
 
+      <funcprototype>
+        <funcdef>bool <function>waffle_string_to_enum</function></funcdef>
+        <paramdef>const char* <parameter>s</parameter></paramdef>
+        <paramdef>int32_t* <parameter>e</parameter></paramdef>
+      </funcprototype>
+
     </funcsynopsis>
   </refsynopsisdiv>
 
@@ -64,6 +71,23 @@ enum waffle_enum {...};
             Convert an <type>waffle_enum</type> token to a string.
             For example, convert <constant>WAFFLE_DONT_CARE</constant> to <code>"WAFFLE_DONT_CARE"</code>.
             Return null if the token is not a valid <type>waffle_enum</type>.
+          </para>
+          <para>
+            This function always sets the error code to <constant>WAFFLE_NO_ERROR</constant>.
+            It can be called before waffle has been successfully initialized with
+            <citerefentry><refentrytitle><function>waffle_init</function></refentrytitle><manvolnum>3</manvolnum></citerefentry>
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><function>waffle_string_to_enum()</function></term>
+        <listitem>
+          <para>
+            Convert a string to a <type>waffle_enum</type> token in <code>*e</code>.
+            For example, convert <code>"WAFFLE_DONT_CARE"</code> to <constant>WAFFLE_DONT_CARE</constant>.
+            String matching is not case-sensitive, and aliases exist for some names.
+            Returns <constant>false</constant> and does not change <code>*e</code> if the string does not match any <type>waffle_enum</type> name.
           </para>
           <para>
             This function always sets the error code to <constant>WAFFLE_NO_ERROR</constant>.
