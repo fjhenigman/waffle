@@ -42,6 +42,7 @@ waffle_window_create2(
     struct wcore_config *wc_config = wcore_config(config);
     intptr_t *attrib_list_filtered = NULL;
     intptr_t width = 0, height = 0;
+    intptr_t unused;
 
     const struct api_object *obj_list[] = {
         wc_config ? &wc_config->api : NULL,
@@ -53,38 +54,42 @@ waffle_window_create2(
 
     attrib_list_filtered = wcore_attrib_list_copy(attrib_list);
 
-    if (!wcore_attrib_list_pop(attrib_list_filtered,
-                               WAFFLE_WINDOW_WIDTH, &width)) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "required attribute WAFFLE_WINDOW_WIDTH is missing");
-        goto done;
-    }
+    if (!wcore_attrib_list_get(attrib_list_filtered,
+                               WAFFLE_WINDOW_FULLSCREEN, &unused)) {
 
-    if (!wcore_attrib_list_pop(attrib_list_filtered,
-                               WAFFLE_WINDOW_HEIGHT, &height)) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "required attribute WAFFLE_WINDOW_HEIGHT is missing");
-        goto done;
-    }
+        if (!wcore_attrib_list_pop(attrib_list_filtered,
+                                   WAFFLE_WINDOW_WIDTH, &width)) {
+            wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
+                         "required attribute WAFFLE_WINDOW_WIDTH is missing");
+            goto done;
+        }
 
-    if (width <= 0) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_WINDOW_WIDTH is not positive");
-        goto done;
-    } else if (width > INT32_MAX) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_WINDOW_WIDTH is greater than INT32_MAX");
-        goto done;
-    }
+        if (!wcore_attrib_list_pop(attrib_list_filtered,
+                                   WAFFLE_WINDOW_HEIGHT, &height)) {
+            wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
+                         "required attribute WAFFLE_WINDOW_HEIGHT is missing");
+            goto done;
+        }
 
-    if (height <= 0) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_WINDOW_HEIGHT is not positive");
-        goto done;
-    } else if (height > INT32_MAX) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_WINDOW_HEIGHT is greater than INT32_MAX");
-        goto done;
+        if (width <= 0) {
+            wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
+                         "WAFFLE_WINDOW_WIDTH is not positive");
+            goto done;
+        } else if (width > INT32_MAX) {
+            wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
+                         "WAFFLE_WINDOW_WIDTH is greater than INT32_MAX");
+            goto done;
+        }
+
+        if (height <= 0) {
+            wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
+                         "WAFFLE_WINDOW_HEIGHT is not positive");
+            goto done;
+        } else if (height > INT32_MAX) {
+            wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
+                         "WAFFLE_WINDOW_HEIGHT is greater than INT32_MAX");
+            goto done;
+        }
     }
 
     wc_self = api_platform->vtbl->window.create(api_platform,

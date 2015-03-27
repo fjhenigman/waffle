@@ -66,9 +66,18 @@ xegl_window_create(struct wcore_platform *wc_plat,
     struct wegl_platform *plat = wegl_platform(wc_plat);
     xcb_visualid_t visual;
     bool ok = true;
+    intptr_t unused;
+    size_t expect = 0;
 
-    if (wcore_attrib_list_length(attrib_list) > 0) {
-        wcore_error_bad_attribute(attrib_list[0]);
+    if (wcore_attrib_list_get(attrib_list, WAFFLE_WINDOW_FULLSCREEN, &unused))
+ {
+        width = DisplayWidth(dpy->x11.xlib, dpy->x11.screen);
+        height = DisplayHeight(dpy->x11.xlib, dpy->x11.screen);
+        expect = 1;
+    }
+
+    if (wcore_attrib_list_length(attrib_list) > expect) {
+        wcore_error_bad_attribute(attrib_list[expect]);
         return NULL;
     }
 
