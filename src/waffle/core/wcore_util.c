@@ -68,54 +68,54 @@ wcore_calloc(size_t size)
     return p;
 }
 
+struct enum_map_entry {
+    const char *name;
+    int32_t value;
+};
+
+static int
+enum_cmp_value(const void *v1, const void *v2)
+{
+    const struct enum_map_entry *e1 = (const struct enum_map_entry *) v1;
+    const struct enum_map_entry *e2 = (const struct enum_map_entry *) v2;
+    return e1->value - e2->value;
+}
+
+#define NAME_VALUE(name, value) { #name, value },
+
+static struct enum_map_entry enum_map_value[] = {
+    WAFFLE_ENUM_LIST(NAME_VALUE)
+};
+
+#undef NAME_VALUE
+
+#define ARRAY_SIZE(a) (sizeof(a) / sizeof(a[0]))
+
+static void
+enum_sort()
+{
+    static bool sorted = false;
+    if (sorted)
+        return;
+    qsort(enum_map_value, ARRAY_SIZE(enum_map_value), sizeof(enum_map_value[0]),
+          enum_cmp_value);
+    sorted = true;
+}
+
 const char*
 wcore_enum_to_string(int32_t e)
 {
-    switch (e) {
-        #define CASE(x) case x: return #x
+    enum_sort();
+    struct enum_map_entry key = { .value = e };
+    struct enum_map_entry *found = bsearch(&key,
+                                           enum_map_value,
+                                           ARRAY_SIZE(enum_map_value),
+                                           sizeof(enum_map_value[0]),
+                                           enum_cmp_value);
+    if (!found)
+        return NULL;
 
-        CASE(WAFFLE_DONT_CARE);
-        CASE(WAFFLE_NONE);
-        CASE(WAFFLE_PLATFORM);
-        CASE(WAFFLE_PLATFORM_ANDROID);
-        CASE(WAFFLE_PLATFORM_CGL);
-        CASE(WAFFLE_PLATFORM_GLX);
-        CASE(WAFFLE_PLATFORM_WAYLAND);
-        CASE(WAFFLE_PLATFORM_X11_EGL);
-        CASE(WAFFLE_PLATFORM_GBM);
-        CASE(WAFFLE_PLATFORM_WGL);
-        CASE(WAFFLE_PLATFORM_NACL);
-        CASE(WAFFLE_CONTEXT_API);
-        CASE(WAFFLE_CONTEXT_OPENGL);
-        CASE(WAFFLE_CONTEXT_OPENGL_ES1);
-        CASE(WAFFLE_CONTEXT_OPENGL_ES2);
-        CASE(WAFFLE_CONTEXT_OPENGL_ES3);
-        CASE(WAFFLE_CONTEXT_MAJOR_VERSION);
-        CASE(WAFFLE_CONTEXT_MINOR_VERSION);
-        CASE(WAFFLE_CONTEXT_PROFILE);
-        CASE(WAFFLE_CONTEXT_CORE_PROFILE);
-        CASE(WAFFLE_CONTEXT_COMPATIBILITY_PROFILE);
-        CASE(WAFFLE_CONTEXT_FORWARD_COMPATIBLE);
-        CASE(WAFFLE_CONTEXT_DEBUG);
-        CASE(WAFFLE_RED_SIZE);
-        CASE(WAFFLE_GREEN_SIZE);
-        CASE(WAFFLE_BLUE_SIZE);
-        CASE(WAFFLE_ALPHA_SIZE);
-        CASE(WAFFLE_DEPTH_SIZE);
-        CASE(WAFFLE_STENCIL_SIZE);
-        CASE(WAFFLE_SAMPLE_BUFFERS);
-        CASE(WAFFLE_SAMPLES);
-        CASE(WAFFLE_DOUBLE_BUFFERED);
-        CASE(WAFFLE_ACCUM_BUFFER);
-        CASE(WAFFLE_DL_OPENGL);
-        CASE(WAFFLE_DL_OPENGL_ES1);
-        CASE(WAFFLE_DL_OPENGL_ES2);
-        CASE(WAFFLE_DL_OPENGL_ES3);
-        CASE(WAFFLE_WINDOW_WIDTH);
-        CASE(WAFFLE_WINDOW_HEIGHT);
-
-        default: return NULL;
-
-        #undef CASE
-    }
+    return found->name;
 }
+
+#undef ARRAY_SIZE
