@@ -98,80 +98,92 @@ waffle_error_to_string(enum waffle_error e);
 // waffle_enum
 // ---------------------------------------------------------------------------
 
-enum waffle_enum {
-    // ------------------------------------------------------------------
-    // Generic
-    // ------------------------------------------------------------------
-
-    WAFFLE_DONT_CARE                                            = -1,
-    WAFFLE_NONE                                                 =  0,
-
-    // ------------------------------------------------------------------
-    // For waffle_init()
-    // ------------------------------------------------------------------
-
-    WAFFLE_PLATFORM                                             = 0x0010,
-        WAFFLE_PLATFORM_ANDROID                                 = 0x0011,
-        WAFFLE_PLATFORM_CGL                                     = 0x0012,
-        WAFFLE_PLATFORM_GLX                                     = 0x0013,
-        WAFFLE_PLATFORM_WAYLAND                                 = 0x0014,
-        WAFFLE_PLATFORM_X11_EGL                                 = 0x0015,
-        WAFFLE_PLATFORM_GBM                                     = 0x0016,
-        WAFFLE_PLATFORM_WGL                                     = 0x0017,
-        WAFFLE_PLATFORM_NACL                                    = 0x0018,
-
-    // ------------------------------------------------------------------
-    // For waffle_config_choose()
-    // ------------------------------------------------------------------
-
-    WAFFLE_CONTEXT_API                                          = 0x020a,
-        WAFFLE_CONTEXT_OPENGL                                   = 0x020b,
-        WAFFLE_CONTEXT_OPENGL_ES1                               = 0x020c,
-        WAFFLE_CONTEXT_OPENGL_ES2                               = 0x020d,
-        WAFFLE_CONTEXT_OPENGL_ES3                               = 0x0214,
-
-    WAFFLE_CONTEXT_MAJOR_VERSION                                = 0x020e,
-    WAFFLE_CONTEXT_MINOR_VERSION                                = 0x020f,
-
-    WAFFLE_CONTEXT_PROFILE                                      = 0x0210,
-        WAFFLE_CONTEXT_CORE_PROFILE                             = 0x0211,
-        WAFFLE_CONTEXT_COMPATIBILITY_PROFILE                    = 0x0212,
+#define WAFFLE_ENUM_LIST_ANY(f) \
+    /* ----------------------------------------------------------------*/ \
+    /* Generic                                                         */ \
+    /* ----------------------------------------------------------------*/ \
+                                                                          \
+    f(WAFFLE_DONT_CARE                                          , -1)     \
+    f(WAFFLE_NONE                                               ,  0)     \
+                                                                          \
+    /* ----------------------------------------------------------------*/ \
+    /* For waffle_init()                                               */ \
+    /* ----------------------------------------------------------------*/ \
+                                                                          \
+    f(WAFFLE_PLATFORM                                           , 0x0010) \
+        f(WAFFLE_PLATFORM_ANDROID                               , 0x0011) \
+        f(WAFFLE_PLATFORM_CGL                                   , 0x0012) \
+        f(WAFFLE_PLATFORM_GLX                                   , 0x0013) \
+        f(WAFFLE_PLATFORM_WAYLAND                               , 0x0014) \
+        f(WAFFLE_PLATFORM_X11_EGL                               , 0x0015) \
+        f(WAFFLE_PLATFORM_GBM                                   , 0x0016) \
+        f(WAFFLE_PLATFORM_WGL                                   , 0x0017) \
+        f(WAFFLE_PLATFORM_NACL                                  , 0x0018) \
+                                                                          \
+    /* ----------------------------------------------------------------*/ \
+    /* For waffle_config_choose()                                      */ \
+    /* ----------------------------------------------------------------*/ \
+                                                                          \
+    f(WAFFLE_CONTEXT_API                                        , 0x020a) \
+        f(WAFFLE_CONTEXT_OPENGL                                 , 0x020b) \
+        f(WAFFLE_CONTEXT_OPENGL_ES1                             , 0x020c) \
+        f(WAFFLE_CONTEXT_OPENGL_ES2                             , 0x020d) \
+        f(WAFFLE_CONTEXT_OPENGL_ES3                             , 0x0214) \
+                                                                          \
+    f(WAFFLE_CONTEXT_MAJOR_VERSION                              , 0x020e) \
+    f(WAFFLE_CONTEXT_MINOR_VERSION                              , 0x020f) \
+                                                                          \
+    f(WAFFLE_CONTEXT_PROFILE                                    , 0x0210) \
+        f(WAFFLE_CONTEXT_CORE_PROFILE                           , 0x0211) \
+        f(WAFFLE_CONTEXT_COMPATIBILITY_PROFILE                  , 0x0212) \
+                                                                          \
+    f(WAFFLE_RED_SIZE                                           , 0x0201) \
+    f(WAFFLE_GREEN_SIZE                                         , 0x0202) \
+    f(WAFFLE_BLUE_SIZE                                          , 0x0203) \
+    f(WAFFLE_ALPHA_SIZE                                         , 0x0204) \
+                                                                          \
+    f(WAFFLE_DEPTH_SIZE                                         , 0x0205) \
+    f(WAFFLE_STENCIL_SIZE                                       , 0x0206) \
+                                                                          \
+    f(WAFFLE_SAMPLE_BUFFERS                                     , 0x0207) \
+    f(WAFFLE_SAMPLES                                            , 0x0208) \
+                                                                          \
+    f(WAFFLE_DOUBLE_BUFFERED                                    , 0x0209) \
+                                                                          \
+    f(WAFFLE_ACCUM_BUFFER                                       , 0x0213) \
+                                                                          \
+    /* ----------------------------------------------------------------*/ \
+    /* For waffle_dl_sym()                                             */ \
+    /* ----------------------------------------------------------------*/ \
+                                                                          \
+    f(WAFFLE_DL_OPENGL                                          , 0x0301) \
+    f(WAFFLE_DL_OPENGL_ES1                                      , 0x0302) \
+    f(WAFFLE_DL_OPENGL_ES2                                      , 0x0303) \
+    f(WAFFLE_DL_OPENGL_ES3                                      , 0x0304) \
+                                                                          \
+    /* ----------------------------------------------------------------*/ \
+    /* For waffle_window                                               */ \
+    /* ----------------------------------------------------------------*/ \
+                                                                          \
+    f(WAFFLE_WINDOW_WIDTH                                       , 0x0310) \
+    f(WAFFLE_WINDOW_HEIGHT                                      , 0x0311)
 
 #if WAFFLE_API_VERSION >= 0x0103
-    WAFFLE_CONTEXT_FORWARD_COMPATIBLE                           = 0x0215,
-    WAFFLE_CONTEXT_DEBUG                                        = 0x0216,
+#define WAFFLE_ENUM_LIST_0103(f)                                          \
+    f(WAFFLE_CONTEXT_FORWARD_COMPATIBLE                         , 0x0215) \
+    f(WAFFLE_CONTEXT_DEBUG                                      , 0x0216)
+#else
+#define WAFFLE_ENUM_LIST_0103(f)
 #endif
 
-    WAFFLE_RED_SIZE                                             = 0x0201,
-    WAFFLE_GREEN_SIZE                                           = 0x0202,
-    WAFFLE_BLUE_SIZE                                            = 0x0203,
-    WAFFLE_ALPHA_SIZE                                           = 0x0204,
+#define WAFFLE_ENUM_LIST(f) \
+    WAFFLE_ENUM_LIST_ANY(f) \
+    WAFFLE_ENUM_LIST_0103(f)
 
-    WAFFLE_DEPTH_SIZE                                           = 0x0205,
-    WAFFLE_STENCIL_SIZE                                         = 0x0206,
-
-    WAFFLE_SAMPLE_BUFFERS                                       = 0x0207,
-    WAFFLE_SAMPLES                                              = 0x0208,
-
-    WAFFLE_DOUBLE_BUFFERED                                      = 0x0209,
-
-    WAFFLE_ACCUM_BUFFER                                         = 0x0213,
-
-    // ------------------------------------------------------------------
-    // For waffle_dl_sym()
-    // ------------------------------------------------------------------
-
-    WAFFLE_DL_OPENGL                                            = 0x0301,
-    WAFFLE_DL_OPENGL_ES1                                        = 0x0302,
-    WAFFLE_DL_OPENGL_ES2                                        = 0x0303,
-    WAFFLE_DL_OPENGL_ES3                                        = 0x0304,
-
-    // ------------------------------------------------------------------
-    // For waffle_window
-    // ------------------------------------------------------------------
-
-    WAFFLE_WINDOW_WIDTH                                         = 0x0310,
-    WAFFLE_WINDOW_HEIGHT                                        = 0x0311,
+enum waffle_enum {
+#define ENUM_ITEM(name, value) name = value,
+WAFFLE_ENUM_LIST(ENUM_ITEM)
+#undef ENUM_ITEM
 };
 
 const char*
