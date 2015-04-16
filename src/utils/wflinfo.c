@@ -237,10 +237,10 @@ static const GLubyte * (APIENTRY *glGetStringi)(GLenum name, GLint i);
 /// @brief Command line options.
 struct options {
     /// @brief One of `WAFFLE_PLATFORM_*`.
-    int platform;
+    int32_t platform;
 
     /// @brief One of `WAFFLE_CONTEXT_OPENGL_*`.
-    int context_api;
+    int32_t context_api;
 
     /// @brief One of `WAFFLE_CONTEXT_PROFILE_*` or `WAFFLE_NONE`.
     int context_profile;
@@ -257,70 +257,12 @@ struct options {
     int dl;
 };
 
-struct enum_map {
-    int i;
-    const char *s;
-};
-
-static const struct enum_map platform_map[] = {
-    {WAFFLE_PLATFORM_ANDROID,   "android"       },
-    {WAFFLE_PLATFORM_CGL,       "cgl",          },
-    {WAFFLE_PLATFORM_GBM,       "gbm"           },
-    {WAFFLE_PLATFORM_GLX,       "glx"           },
-    {WAFFLE_PLATFORM_WAYLAND,   "wayland"       },
-    {WAFFLE_PLATFORM_WGL,       "wgl"           },
-    {WAFFLE_PLATFORM_X11_EGL,   "x11_egl"       },
-    {0,                         0               },
-};
-
-static const struct enum_map context_api_map[] = {
-    {WAFFLE_CONTEXT_OPENGL,         "gl"        },
-    {WAFFLE_CONTEXT_OPENGL_ES1,     "gles1"     },
-    {WAFFLE_CONTEXT_OPENGL_ES2,     "gles2"     },
-    {WAFFLE_CONTEXT_OPENGL_ES3,     "gles3"     },
-    {0,                             0           },
-};
-
-/// @brief Translate string to `enum waffle_enum`.
-///
-/// @param self is a list of map items. The last item must be zero-filled.
-/// @param result is altered only if @a s if found.
-/// @return true if @a s was found in @a map.
-static bool
-enum_map_translate_str(
-        const struct enum_map *self,
-        const char *s,
-        int *result)
-{
-    for (const struct enum_map *i = self; i->i != 0; ++i) {
-        if (!strncmp(s, i->s, strlen(i->s) + 1)) {
-            *result = i->i;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-static const char *
-enum_map_to_str(const struct enum_map *self,
-                int val)
-{
-    for (const struct enum_map *i = self; i->i != 0; ++i) {
-        if (i->i == val) {
-            return i->s;
-        }
-    }
-
-    return NULL;
-}
-
 /// @return true on success.
 static bool
 parse_args(int argc, char *argv[], struct options *opts)
 {
-    bool ok;
     bool loop_get_opt = true;
+    char ename[99];
 
 #ifdef __APPLE__
     removeXcodeArgs(&argc, argv);
@@ -343,17 +285,15 @@ parse_args(int argc, char *argv[], struct options *opts)
             case '?':
                 goto error_unrecognized_arg;
             case OPT_PLATFORM:
-                ok = enum_map_translate_str(platform_map, optarg,
-                                            &opts->platform);
-                if (!ok) {
+                snprintf(ename, sizeof(ename), "WAFFLE_PLATFORM_%s", optarg);
+                if (!waffle_string_to_enum(ename, &opts->platform)) {
                     usage_error_printf("'%s' is not a valid platform",
                                        optarg);
                 }
                 break;
             case OPT_API:
-                ok = enum_map_translate_str(context_api_map, optarg,
-                                            &opts->context_api);
-                if (!ok) {
+                snprintf(ename, sizeof(ename), "WAFFLE_CONTEXT_OPEN%s", optarg);
+                if (!waffle_string_to_enum(ename, &opts->context_api)) {
                     usage_error_printf("'%s' is not a valid API for an OpenGL "
                                        "context", optarg);
                 }
@@ -551,12 +491,14 @@ print_wflinfo(const struct options *opts)
         version_str = "WFLINFO_GL_ERROR";
     }
 
-    const char *platform = enum_map_to_str(platform_map, opts->platform);
+    const char *platform = waffle_enum_to_string(opts->platform);
     assert(platform != NULL);
+    platform += sizeof "WAFFLE_PLATFORM_" - 1;
     printf("Waffle platform: %s\n", platform);
 
-    const char *api = enum_map_to_str(context_api_map, opts->context_api);
+    const char *api = waffle_enum_to_string(opts->context_api);
     assert(api != NULL);
+    api += sizeof "WAFFLE_CONTEXT_OPEN" - 1;
     printf("Waffle api: %s\n", api);
 
     printf("OpenGL vendor string: %s\n", vendor);
