@@ -37,12 +37,14 @@
 extern "C" {
 #endif
 
+struct wcore_context;
 struct wcore_display;
 struct wcore_platform;
 union waffle_native_display;
 
 struct wcore_display {
     struct api_object api;
+    struct wcore_context *current_context;
     struct wcore_platform *platform;
 };
 
