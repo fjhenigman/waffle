@@ -34,6 +34,9 @@
 struct wegl_platform {
     struct wcore_platform wcore;
 
+    // EGL version from eglInitialize
+    EGLint major, minor;
+
     // EGL function pointers
     void *eglHandle;
 
