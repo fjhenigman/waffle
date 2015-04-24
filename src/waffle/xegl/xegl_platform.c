@@ -152,6 +152,7 @@ static const struct wcore_platform_vtbl xegl_platform_vtbl = {
         .connect = xegl_display_connect,
         .destroy = xegl_display_destroy,
         .supports_context_api = wegl_display_supports_context_api,
+        .info_json = wegl_display_info_json,
         .get_native = xegl_display_get_native,
     },
 
