@@ -38,6 +38,7 @@
 
 #include "x11_display.h"
 
+struct json;
 struct wcore_platform;
 
 struct glx_display {
@@ -65,6 +66,9 @@ glx_display_destroy(struct wcore_display *wc_self);
 bool
 glx_display_supports_context_api(struct wcore_display *wc_self,
                                  int32_t context_api);
+
+void
+glx_display_info_json(struct wcore_display *wc_self, struct json *);
 
 union waffle_native_display*
 glx_display_get_native(struct wcore_display *wc_self);
