@@ -79,6 +79,9 @@ static const char *usage_message =
     "    -v, --verbose\n"
     "        Print more information.\n"
     "\n"
+    "    -s, --specific\n"
+    "        Include platform-specific information (json format only).\n"
+    "\n"
     "    --forward-compatible\n"
     "        Create a forward-compatible context.\n"
     "\n"
@@ -105,6 +108,7 @@ enum {
     OPT_VERSION = 'V',
     OPT_PROFILE,
     OPT_VERBOSE = 'v',
+    OPT_SPECIFIC = 's',
     OPT_DEBUG_CONTEXT,
     OPT_FORWARD_COMPATIBLE,
     OPT_FORMAT = 'f',
@@ -117,6 +121,7 @@ static const struct option get_opts[] = {
     { .name = "version",        .has_arg = required_argument,     .val = OPT_VERSION },
     { .name = "profile",        .has_arg = required_argument,     .val = OPT_PROFILE },
     { .name = "verbose",        .has_arg = no_argument,           .val = OPT_VERBOSE },
+    { .name = "specific",       .has_arg = no_argument,           .val = OPT_SPECIFIC },
     { .name = "debug-context",  .has_arg = no_argument,           .val = OPT_DEBUG_CONTEXT },
     { .name = "forward-compatible", .has_arg = no_argument,       .val = OPT_FORWARD_COMPATIBLE },
     { .name = "format",         .has_arg = required_argument,     .val = OPT_FORMAT },
@@ -263,6 +268,7 @@ struct options {
     int context_minor;
 
     bool verbose;
+    bool specific;
 
     enum format {
         FORMAT_ORIGINAL,
@@ -356,7 +362,7 @@ parse_args(int argc, char *argv[], struct options *opts)
     opterr = 0;
 
     while (loop_get_opt) {
-        int opt = getopt_long(argc, argv, "a:f:hp:vV:", get_opts, NULL);
+        int opt = getopt_long(argc, argv, "a:f:hp:svV:", get_opts, NULL);
         switch (opt) {
             case -1:
                 loop_get_opt = false;
@@ -418,6 +424,9 @@ parse_args(int argc, char *argv[], struct options *opts)
                 break;
             case OPT_VERBOSE:
                 opts->verbose = true;
+                break;
+            case OPT_SPECIFIC:
+                opts->specific = true;
                 break;
             case OPT_FORWARD_COMPATIBLE:
                 opts->context_forward_compatible = true;
@@ -701,9 +710,9 @@ print_json(const struct options *opts)
 }
 
 static bool
-print_json2(struct waffle_display *dpy)
+print_json2(struct waffle_display *dpy, bool specific)
 {
-    char *info = waffle_display_info_json(dpy, false);
+    char *info = waffle_display_info_json(dpy, specific);
     if (info) {
         printf("%s\n", info);
         free(info);
@@ -1298,7 +1307,7 @@ main(int argc, char **argv)
             ok = print_json(&opts);
             break;
         case FORMAT_JSON2:
-            ok = print_json2(dpy);
+            ok = print_json2(dpy, opts.specific);
             break;
     }
 
