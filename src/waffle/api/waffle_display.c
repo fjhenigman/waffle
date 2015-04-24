@@ -366,8 +366,17 @@ waffle_display_info_json(struct waffle_display *self, bool platform_too)
         return NULL;
     }
 
+    char *platform_info = json_ignore;
+    if (platform_too) {
+        if (api_platform->vtbl->display.info_json)
+            platform_info = api_platform->vtbl->display.info_json(wc_self);
+        else // platform-specific info not available, return empty object
+            platform_info = "{}";
+    }
+
     return json_object(
         "generic", get_generic_info(wc_self->current_context),
+        "platform", platform_info,
         json_end);
 }
 

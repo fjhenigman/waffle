@@ -77,6 +77,9 @@ struct wcore_platform_vtbl {
                 struct wcore_display *display,
                 int32_t context_api);
 
+        char*
+        (*info_json)(struct wcore_display *display);
+
         /// May be null.
         union waffle_native_display*
         (*get_native)(struct wcore_display *display);
