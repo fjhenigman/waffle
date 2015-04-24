@@ -139,6 +139,7 @@ struct wcore_platform_vtbl {
 
 struct wcore_platform {
     const struct wcore_platform_vtbl *vtbl;
+    int32_t waffle_platform; // WAFFLE_PLATFORM_* enum
 };
 
 static inline bool
