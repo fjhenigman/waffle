@@ -77,6 +77,9 @@ static const char *usage_message =
     "    -v, --verbose\n"
     "        Print more information.\n"
     "\n"
+    "    -f, --format\n"
+    "        One of: original (default) or json\n"
+    "\n"
     "    --forward-compatible\n"
     "        Create a forward-compatible context.\n"
     "\n"
@@ -99,6 +102,7 @@ enum {
     OPT_API = 'a',
     OPT_VERSION = 'V',
     OPT_PROFILE,
+    OPT_FORMAT = 'f',
     OPT_VERBOSE = 'v',
     OPT_DEBUG_CONTEXT,
     OPT_FORWARD_COMPATIBLE,
@@ -110,6 +114,7 @@ static const struct option get_opts[] = {
     { .name = "api",            .has_arg = required_argument,     .val = OPT_API },
     { .name = "version",        .has_arg = required_argument,     .val = OPT_VERSION },
     { .name = "profile",        .has_arg = required_argument,     .val = OPT_PROFILE },
+    { .name = "format",         .has_arg = required_argument,     .val = OPT_FORMAT },
     { .name = "verbose",        .has_arg = no_argument,           .val = OPT_VERBOSE },
     { .name = "debug-context",  .has_arg = no_argument,           .val = OPT_DEBUG_CONTEXT },
     { .name = "forward-compatible", .has_arg = no_argument,       .val = OPT_FORWARD_COMPATIBLE },
@@ -248,6 +253,8 @@ struct options {
     int context_major;
     int context_minor;
 
+    enum format { FORMAT_ORIGINAL, FORMAT_JSON } format;
+
     bool verbose;
 
     bool context_forward_compatible;
@@ -330,12 +337,13 @@ parse_args(int argc, char *argv[], struct options *opts)
     opts->context_profile = WAFFLE_NONE;
     opts->context_major = WAFFLE_DONT_CARE;
     opts->context_minor = WAFFLE_DONT_CARE;
+    opts->format = FORMAT_ORIGINAL;
 
     // prevent getopt_long from printing an error message
     opterr = 0;
 
     while (loop_get_opt) {
-        int opt = getopt_long(argc, argv, "a:hp:vV:", get_opts, NULL);
+        int opt = getopt_long(argc, argv, "a:f:hp:vV:", get_opts, NULL);
         switch (opt) {
             case -1:
                 loop_get_opt = false;
@@ -381,6 +389,16 @@ parse_args(int argc, char *argv[], struct options *opts)
                     opts->context_profile = WAFFLE_CONTEXT_COMPATIBILITY_PROFILE;
                 } else {
                     usage_error_printf("'%s' is not a valid OpenGL profile",
+                                       optarg);
+                }
+                break;
+            case OPT_FORMAT:
+                if (strcmp(optarg, "original") == 0) {
+                    opts->format = FORMAT_ORIGINAL;
+                } else if (strcmp(optarg, "json") == 0) {
+                    opts->format = FORMAT_JSON;
+                } else {
+                    usage_error_printf("'%s' is not a valid format",
                                        optarg);
                 }
                 break;
@@ -1119,9 +1137,23 @@ main(int argc, char **argv)
         glGetStringi = waffle_get_proc_address("glGetStringi");
     }
 
-    ok = print_wflinfo(&opts);
-    if (!ok)
-        error_waffle();
+    char *info;
+    switch (opts.format) {
+        case FORMAT_ORIGINAL:
+            ok = print_wflinfo(&opts);
+            if (!ok)
+                error_waffle();
+            break;
+
+        case FORMAT_JSON:
+            info = waffle_display_info_json(dpy, false);
+            if (info) {
+                printf("%s\n", info);
+                free(info);
+            } else
+                error_waffle();
+            break;
+    }
 
     ok = waffle_make_current(dpy, NULL, NULL);
     if (!ok)
