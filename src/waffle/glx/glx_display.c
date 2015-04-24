@@ -25,6 +25,8 @@
 
 #include <stdlib.h>
 
+#include "json.h"
+
 #include "wcore_error.h"
 
 #include "linux_platform.h"
@@ -133,6 +135,51 @@ glx_display_supports_context_api(struct wcore_display *wc_self,
                                  context_api);
             return false;
     }
+}
+
+void
+glx_display_info_json(struct wcore_display *wc_self, struct json *jj)
+{
+    struct glx_display *self = glx_display(wc_self);
+    struct glx_platform *plat = glx_platform(wc_self->platform);
+    Display *dpy = self->x11.xlib;
+    int screen = self->x11.screen;
+
+    int major, minor;
+    if (!plat->glXQueryVersion(dpy, &major, &minor)) {
+        wcore_errorf(WAFFLE_ERROR_UNKNOWN, "glXQueryVersion failed");
+        return json_append(jj, NULL);
+    }
+
+    const char *svendor = plat->glXQueryServerString(dpy, screen, GLX_VENDOR);
+    const char *sversion = plat->glXQueryServerString(dpy, screen, GLX_VERSION);
+    const char *sext = plat->glXQueryServerString(dpy, screen, GLX_EXTENSIONS);
+    const char *cvendor = plat->glXGetClientString(dpy, GLX_VENDOR);
+    const char *cversion = plat->glXGetClientString(dpy, GLX_VERSION);
+    const char *cext = plat->glXGetClientString(dpy, GLX_EXTENSIONS);
+    const char *ext = plat->glXQueryExtensionsString(dpy, screen);
+
+    json_appendv(jj,
+        "glx", "{",
+            "server", "{",
+                "vendor string",     json_str(svendor),
+                "version string",    json_str(sversion),
+                "extensions", "[", json_split(sext, " "), "]",
+            "}",
+            "client", "{",
+                "vendor string",     json_str(cvendor),
+                "version string",    json_str(cversion),
+                "extensions", "[", json_split(cext, " "), "]",
+            "}",
+            "common", "{",
+                "version", "[",
+                    json_num(major),
+                    json_num(minor),
+                "]",
+                "extensions", "[", json_split(ext, " "), "]",
+            "}",
+        "}",
+    "");
 }
 
 union waffle_native_display*
