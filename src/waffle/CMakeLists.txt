@@ -71,6 +71,7 @@ set(waffle_sources
     api/waffle_gl_misc.c
     api/waffle_init.c
     api/waffle_window.c
+    core/json.c
     core/wcore_attrib_list.c
     core/wcore_config_attrs.c
     core/wcore_display.c
