@@ -12,6 +12,7 @@ EXPORTS
     waffle_is_extension_in_string
     waffle_display_connect
     waffle_display_disconnect
+    waffle_display_info_json
     waffle_display_supports_context_api
     waffle_display_get_native
     waffle_config_choose

@@ -23,12 +23,60 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include <ctype.h>
+#include <stdio.h>
+
 #include "api_priv.h"
 
-#include "wcore_error.h"
+#include "json.h"
+
+#include "wcore_context.h"
 #include "wcore_display.h"
+#include "wcore_error.h"
 #include "wcore_platform.h"
 #include "wcore_util.h"
+
+typedef unsigned int GLint;
+typedef unsigned int GLenum;
+typedef unsigned char GLubyte;
+
+enum {
+    // Copied from <GL/gl*.h>.
+    GL_NO_ERROR = 0,
+
+    GL_CONTEXT_FLAGS = 0x821e,
+    GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT = 0x00000001,
+    GL_CONTEXT_FLAG_DEBUG_BIT              = 0x00000002,
+    GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT_ARB  = 0x00000004,
+
+    GL_VENDOR                              = 0x1F00,
+    GL_RENDERER                            = 0x1F01,
+    GL_VERSION                             = 0x1F02,
+    GL_EXTENSIONS                          = 0x1F03,
+    GL_NUM_EXTENSIONS                      = 0x821D,
+    GL_SHADING_LANGUAGE_VERSION            = 0x8B8C,
+};
+
+#ifndef _WIN32
+#define APIENTRY
+#else
+#ifndef APIENTRY
+#define APIENTRY __stdcall
+#endif
+#endif
+
+static GLenum (APIENTRY *glGetError)(void);
+static void (APIENTRY *glGetIntegerv)(GLenum pname, GLint *params);
+static const GLubyte * (APIENTRY *glGetString)(GLenum name);
+static const GLubyte * (APIENTRY *glGetStringi)(GLenum name, GLint i);
+
+#if defined(__GNUC__)
+#define NORETURN __attribute__((noreturn))
+#elif defined(_MSC_VER)
+#define NORETURN __declspec(noreturn)
+#else
+#define NORETURN
+#endif
 
 WAFFLE_API struct waffle_display*
 waffle_display_connect(const char *name)
@@ -88,6 +136,240 @@ waffle_display_supports_context_api(
 
     return api_platform->vtbl->display.supports_context_api(wc_self,
                                                             context_api);
+}
+
+static int
+parse_version(const char *version)
+{
+    int count, major, minor;
+
+    if (version == NULL)
+        return 0;
+
+    while (*version != '\0' && !isdigit(*version))
+        version++;
+
+    count = sscanf(version, "%d.%d", &major, &minor);
+    if (count != 2)
+        return 0;
+
+    if (minor > 9)
+        return 0;
+
+    return (major * 10) + minor;
+}
+
+static void
+add_context_flags(struct json *jj)
+{
+    static struct {
+        GLint flag;
+        char *str;
+    } flags[] = {
+        { GL_CONTEXT_FLAG_FORWARD_COMPATIBLE_BIT, "FORWARD_COMPATIBLE" },
+        { GL_CONTEXT_FLAG_DEBUG_BIT, "DEBUG" },
+        { GL_CONTEXT_FLAG_ROBUST_ACCESS_BIT_ARB, "ROBUST_ACCESS" },
+    };
+    int flag_count = sizeof(flags) / sizeof(flags[0]);
+    GLint context_flags = 0;
+
+    glGetIntegerv(GL_CONTEXT_FLAGS, &context_flags);
+    if (glGetError() != GL_NO_ERROR)
+        return json_append(jj, json_str("WFLINFO_GL_ERROR"));
+
+    if (context_flags == 0)
+        return json_append(jj, json_num(0));
+
+    for (int i = 0; i < flag_count; i++) {
+        if ((flags[i].flag & context_flags) != 0) {
+            json_append(jj, json_str(flags[i].str));
+            context_flags = context_flags & ~flags[i].flag;
+        }
+    }
+    for (int i = 0; context_flags != 0; context_flags >>= 1, i++) {
+        if ((context_flags & 1) != 0) {
+            json_append(jj, json_num(1 << i));
+        }
+    }
+}
+
+static void
+add_extensions(struct json *jj, bool use_stringi)
+{
+    GLint count = 0, i;
+    const char *ext;
+
+    if (use_stringi) {
+        glGetIntegerv(GL_NUM_EXTENSIONS, &count);
+        if (glGetError() != GL_NO_ERROR) {
+            json_append(jj, json_str("WFLINFO_GL_ERROR"));
+        } else {
+            for (i = 0; i < count; i++) {
+                ext = (const char *) glGetStringi(GL_EXTENSIONS, i);
+                if (glGetError() != GL_NO_ERROR)
+                    ext = "WFLINFO_GL_ERROR";
+                json_append(jj, json_str(ext));
+            }
+        }
+    } else {
+        const char *extensions = (const char *) glGetString(GL_EXTENSIONS);
+        if (glGetError() != GL_NO_ERROR)
+            json_append(jj, json_str("WFLINFO_GL_ERROR"));
+        else
+            json_append(jj, json_split(extensions, " "));
+    }
+}
+
+static void
+add_generic_info(struct json *jj, struct wcore_context *ctx)
+{
+    int32_t dl;
+    //XXX this pattern seems to occur repeatedly - do we need two sets of enums?
+    switch (ctx->context_api) {
+        case WAFFLE_CONTEXT_OPENGL:     dl = WAFFLE_DL_OPENGL;      break;
+        case WAFFLE_CONTEXT_OPENGL_ES1: dl = WAFFLE_DL_OPENGL_ES1;  break;
+        case WAFFLE_CONTEXT_OPENGL_ES2: dl = WAFFLE_DL_OPENGL_ES2;  break;
+        case WAFFLE_CONTEXT_OPENGL_ES3: dl = WAFFLE_DL_OPENGL_ES3;  break;
+        default:
+            abort();
+            break;
+    }
+
+    glGetError = waffle_dl_sym(dl, "glGetError");
+    if (!glGetError)
+        return json_append(jj, NULL);
+
+    glGetIntegerv = waffle_dl_sym(dl, "glGetIntegerv");
+    if (!glGetIntegerv)
+        return json_append(jj, NULL);
+
+    glGetString = waffle_dl_sym(dl, "glGetString");
+    if (!glGetString)
+        return json_append(jj, NULL);
+
+    // Retrieving GL functions is tricky. When glGetStringi is supported, here
+    // are some boggling variations as of 2014-11-19:
+    //   - Mali drivers on EGL 1.4 expose glGetStringi statically from
+    //     libGLESv2 but not dynamically from eglGetProcAddress. The EGL 1.4 spec
+    //     permits this behavior.
+    //   - EGL 1.5 requires that eglGetStringi be exposed dynamically through
+    //     eglGetProcAddress. Exposing statically with dlsym is optional.
+    //   - Windows requires that glGetStringi be exposed dynamically from
+    //     wglGetProcAddress. Exposing statically from GetProcAddress (Window's
+    //     dlsym equivalent) is optional.
+    //   - Mesa drivers expose glGetStringi statically from libGL and libGLESv2
+    //     and dynamically from eglGetProcAddress and glxGetProcAddress.
+    //   - Mac exposes glGetStringi only statically.
+    //
+    // Try waffle_dl_sym before waffle_get_proc_address because
+    // (1) egl/glXProcAddress can return invalid non-null pointers for
+    // unsupported functions and (2) dlsym returns non-null if and only if the
+    // library exposes the symbol.
+    glGetStringi = waffle_dl_sym(dl, "glGetStringi");
+    if (!glGetStringi) {
+        glGetStringi = waffle_get_proc_address("glGetStringi");
+    }
+
+    while(glGetError() != GL_NO_ERROR) {
+        /* Clear all errors */
+    }
+
+    const char *vendor = (const char *) glGetString(GL_VENDOR);
+    if (glGetError() != GL_NO_ERROR || vendor == NULL) {
+        vendor = "WFLINFO_GL_ERROR";
+    }
+
+    const char *renderer = (const char *) glGetString(GL_RENDERER);
+    if (glGetError() != GL_NO_ERROR || renderer == NULL) {
+        renderer = "WFLINFO_GL_ERROR";
+    }
+
+    const char *version_str = (const char *) glGetString(GL_VERSION);
+    if (glGetError() != GL_NO_ERROR || version_str == NULL) {
+        version_str = "WFLINFO_GL_ERROR";
+    }
+
+    assert(ctx->display->platform->waffle_platform);
+    const char *platform =
+            wcore_enum_to_string(ctx->display->platform->waffle_platform);
+    assert(platform != NULL);
+
+    assert(ctx->context_api);
+    const char *api = wcore_enum_to_string(ctx->context_api);
+    assert(api != NULL);
+
+    json_appendv(jj,
+        "waffle", "{",
+            "platform", json_str(platform),
+            "api",      json_str(api),
+         "}",
+        "opengl", "{",
+            "vendor",   json_str(vendor),
+            "renderer", json_str(renderer),
+            "version",  json_str(version_str),
+        "}", "");
+
+    int version = parse_version(version_str);
+
+    if (ctx->context_api == WAFFLE_CONTEXT_OPENGL && version >= 31) {
+        json_appendv(jj, "context_flags", "[", "");
+        add_context_flags(jj);
+        json_append(jj, "]");
+    }
+
+    // OpenGL and OpenGL ES >= 3.0 support glGetStringi(GL_EXTENSION, i).
+    const bool use_getstringi = version >= 30;
+
+    if (!glGetStringi && use_getstringi)
+        return json_append(jj, NULL);
+
+    // There are two exceptional cases where wflinfo may not get a
+    // version (or a valid version): one is in gles1 and the other
+    // is GL < 2.0. In these cases do not return WFLINFO_GL_ERROR,
+    // return None. This is preferable to returning WFLINFO_GL_ERROR
+    // because it creates a consistant interface for parsers
+    const char *language_str = "None";
+    if ((ctx->context_api == WAFFLE_CONTEXT_OPENGL && version >= 20) ||
+            ctx->context_api == WAFFLE_CONTEXT_OPENGL_ES2 ||
+            ctx->context_api == WAFFLE_CONTEXT_OPENGL_ES3) {
+        language_str = (const char *) glGetString(GL_SHADING_LANGUAGE_VERSION);
+        if (glGetError() != GL_NO_ERROR || language_str == NULL) {
+            language_str = "WFLINFO_GL_ERROR";
+        }
+    }
+
+    json_appendv(jj, "shading_language_version", json_str(language_str), "");
+    json_appendv(jj, "extensions", "[", "");
+    add_extensions(jj, use_getstringi);
+    json_append(jj, "]");
+}
+
+WAFFLE_API char*
+waffle_display_info_json(struct waffle_display *self, bool platform_too)
+{
+    struct wcore_display *wc_self = wcore_display(self);
+
+    const struct api_object *obj_list[] = {
+        wc_self ? &wc_self->api : NULL,
+    };
+
+    if (!api_check_entry(obj_list, 1))
+        return NULL;
+
+    if (!wc_self->current_context) {
+        wcore_errorf(WAFFLE_ERROR_UNKNOWN, "no current context");
+        return NULL;
+    }
+
+    struct json *jj = json_init();
+    if (!jj)
+        return NULL;
+
+    json_appendv(jj, "{", "generic", "{", "");
+    add_generic_info(jj, wc_self->current_context);
+    json_appendv(jj, "}", "}", "");
+
+    return json_destroy(jj);
 }
 
 WAFFLE_API union waffle_native_display*
