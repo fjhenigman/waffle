@@ -52,6 +52,7 @@ wcore_display_init(struct wcore_display *self,
     mtx_unlock(&mutex);
 
     self->platform = platform;
+    self->current_context = NULL;
 
     if (self->api.display_id == 0) {
         fprintf(stderr, "waffle: error: internal counter wrapped to 0\n");

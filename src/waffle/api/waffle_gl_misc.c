@@ -94,10 +94,13 @@ waffle_make_current(
     if (!api_check_entry(obj_list, len))
         return false;
 
-    return api_platform->vtbl->make_current(api_platform,
-                                            wc_dpy,
-                                            wc_window,
-                                            wc_ctx);
+    bool ok = api_platform->vtbl->make_current(api_platform,
+                                               wc_dpy,
+                                               wc_window,
+                                               wc_ctx);
+    if (ok)
+        wc_dpy->current_context = wc_ctx;
+    return ok;
 }
 
 WAFFLE_API void*
