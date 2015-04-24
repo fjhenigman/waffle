@@ -32,6 +32,7 @@
 
 #include "wcore_display.h"
 
+struct json;
 struct wcore_display;
 
 struct wegl_display {
@@ -56,3 +57,6 @@ wegl_display_teardown(struct wegl_display *dpy);
 bool
 wegl_display_supports_context_api(struct wcore_display *wc_dpy,
                                   int32_t waffle_context_api);
+
+void
+wegl_display_info_json(struct wcore_display *wc_self, struct json *);

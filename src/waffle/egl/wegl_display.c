@@ -25,6 +25,8 @@
 
 #include <assert.h>
 
+#include "json.h"
+
 #include "wcore_error.h"
 #include "wcore_platform.h"
 
@@ -63,7 +65,6 @@ wegl_display_init(struct wegl_display *dpy,
 {
     struct wegl_platform *plat = wegl_platform(wc_plat);
     bool ok;
-    EGLint major, minor;
 
     ok = wcore_display_init(&dpy->wcore, wc_plat);
     if (!ok)
@@ -75,7 +76,7 @@ wegl_display_init(struct wegl_display *dpy,
         goto fail;
     }
 
-    ok = plat->eglInitialize(dpy->egl, &major, &minor);
+    ok = plat->eglInitialize(dpy->egl, &plat->major, &plat->minor);
     if (!ok) {
         wegl_emit_error(plat, "eglInitialize");
         goto fail;
@@ -138,4 +139,31 @@ wegl_display_supports_context_api(struct wcore_display *wc_dpy,
     }
 
     return wc_plat->vtbl->dl_can_open(wc_plat, waffle_dl);
+}
+
+void
+wegl_display_info_json(struct wcore_display *wc_dpy, struct json *jj)
+{
+    struct wegl_display *dpy = wegl_display(wc_dpy);
+    struct wegl_platform *plat = wegl_platform(dpy->wcore.platform);
+
+    const char *version = plat->eglQueryString(dpy->egl, EGL_VERSION);
+    const char *vendor = plat->eglQueryString(dpy->egl, EGL_VENDOR);
+#ifdef EGL_VERSION_1_2
+    const char *apis = plat->eglQueryString(dpy->egl, EGL_CLIENT_APIS);
+#endif
+    const char *ext = plat->eglQueryString(dpy->egl, EGL_EXTENSIONS);
+
+    json_appendv(jj,
+        "version", "{",
+            "major",  json_num(plat->major),
+            "minor",  json_num(plat->minor),
+            "string", json_str(version),
+        "}",
+        "vendor", json_str(vendor),
+#ifdef EGL_VERSION_1_2
+        "client_apis", "[", json_split(apis, " "), "]",
+#endif
+        "extensions", "[", json_split(ext, " "), "]",
+    "");
 }
