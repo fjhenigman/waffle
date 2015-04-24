@@ -66,5 +66,8 @@ bool
 glx_display_supports_context_api(struct wcore_display *wc_self,
                                  int32_t context_api);
 
+char*
+glx_display_info_json(struct wcore_display *wc_self);
+
 union waffle_native_display*
 glx_display_get_native(struct wcore_display *wc_self);
