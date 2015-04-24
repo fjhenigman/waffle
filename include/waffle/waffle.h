@@ -214,6 +214,11 @@ bool
 waffle_display_supports_context_api(struct waffle_display *self,
                                     int32_t context_api);
 
+#if WAFFLE_API_VERSION >= 0x0106
+char*
+waffle_display_info_json(struct waffle_display *self, bool platform_too);
+#endif
+
 union waffle_native_display*
 waffle_display_get_native(struct waffle_display *self);
 

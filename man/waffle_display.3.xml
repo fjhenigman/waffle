@@ -24,6 +24,7 @@
     <refname>waffle_display</refname>
     <refname>waffle_display_connect</refname>
     <refname>waffle_display_disconnect</refname>
+    <refname>waffle_display_info_json</refname>
     <refname>waffle_display_supports_context_api</refname>
     <refname>waffle_display_get_native</refname>
     <refpurpose>class <classname>waffle_display</classname></refpurpose>
@@ -55,6 +56,12 @@ struct waffle_display;
       <funcprototype>
         <funcdef>bool <function>waffle_display_disconnect</function></funcdef>
         <paramdef>struct waffle_display *<parameter>self</parameter></paramdef>
+      </funcprototype>
+
+      <funcprototype>
+        <funcdef>char* <function>waffle_display_info_json</function></funcdef>
+        <paramdef>struct waffle_display *<parameter>self</parameter></paramdef>
+        <paramdef>bool <parameter>platform_info</parameter></paramdef>
       </funcprototype>
 
       <funcprototype>
@@ -119,6 +126,18 @@ struct waffle_display;
           <para>
             Disconnect from the <type>waffle_display</type> and release it's memory. All pointers to waffle objects that
             were created with the display become invalid.
+          </para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><function>waffle_display_info_json()</function></term>
+        <listitem>
+          <para>
+            Return a JSON string containing information about the current context on the given display, including Waffle platform and API, GL version/vendor/renderer and extensions.
+            If <parameter>platform_info</parameter> is true, platform-specific information (such as GLX or EGL versions and extensions) will be included as available.
+            Returns <constant>NULL</constant> on error.
+            The string should be deallocated with <citerefentry><refentrytitle><function>free</function></refentrytitle><manvolnum>3</manvolnum></citerefentry>.
           </para>
         </listitem>
       </varlistentry>
