@@ -456,7 +456,6 @@ gl_error:
     return 0;
 }
 
-//XXX untested
 static GLuint
 slbuf_get_texture_image(struct slbuf *self)
 {
@@ -467,11 +466,13 @@ slbuf_get_texture_image(struct slbuf *self)
         CHECK_GL_ERROR
         f->glBindTexture(GL_TEXTURE_2D, self->texture);
         CHECK_GL_ERROR
-        f->glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB,
-                        self->p->width, self->p->height, 0,
-                        GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+        f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         CHECK_GL_ERROR
-        f->glBindTexture(GL_TEXTURE_2D, self->texture);
+        f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+        CHECK_GL_ERROR
+        f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        CHECK_GL_ERROR
+        f->glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
         CHECK_GL_ERROR
         f->glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, slbuf_get_image(self));
         CHECK_GL_ERROR
@@ -798,7 +799,7 @@ set_gl_values(struct slbuf_func *f, const struct gl_values *c)
     CHECK_GL_ERROR
     f->glBindTexture(GL_TEXTURE_2D, c->texture0);
     CHECK_GL_ERROR
-    if (c->texture0 != GL_TEXTURE0) {
+    if (c->active_texture != GL_TEXTURE0) {
         f->glActiveTexture(c->active_texture);
         CHECK_GL_ERROR
     }
@@ -852,7 +853,7 @@ slbuf_copy_gl(struct slbuf *dst, struct slbuf *src)
     f->glActiveTexture(GL_TEXTURE0);
     CHECK_GL_ERROR
 
-    GLuint texture = slbuf_get_texture_copy(src);
+    GLuint texture = slbuf_get_texture_image(src);
     if (!texture)
         return false;
 
