@@ -30,6 +30,7 @@
 #include <stdint.h>
 #include "c99_compat.h"
 
+struct json;
 struct wcore_config;
 struct wcore_config_attrs;
 struct wcore_context;
@@ -76,6 +77,9 @@ struct wcore_platform_vtbl {
         (*supports_context_api)(
                 struct wcore_display *display,
                 int32_t context_api);
+
+        void
+        (*info_json)(struct wcore_display *display, struct json *);
 
         /// May be null.
         union waffle_native_display*
