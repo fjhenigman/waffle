@@ -367,8 +367,16 @@ waffle_display_info_json(struct waffle_display *self, bool platform_too)
 
     json_appendv(jj, "{", "generic", "{", "");
     add_generic_info(jj, wc_self->current_context);
-    json_appendv(jj, "}", "}", "");
+    json_append(jj, "}");
 
+    if (platform_too) {
+        json_appendv(jj, "platform", "{", "");
+        if (api_platform->vtbl->display.info_json)
+            api_platform->vtbl->display.info_json(wc_self, jj);
+        json_append(jj, "}");
+    }
+
+    json_append(jj, "}");
     return json_destroy(jj);
 }
 
