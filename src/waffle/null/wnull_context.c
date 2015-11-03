@@ -10,6 +10,8 @@
 
 #include "wcore_error.h"
 
+#include "wegl_util.h"
+
 #include "wgbm_platform.h"
 
 #include "wnull_context.h"
@@ -60,7 +62,9 @@ wnull_context_create(struct wcore_platform *wc_plat,
     bool ok = true;
 
 #define LOOKUP(type, name, args) \
-    ctx->name = linux_platform_dl_sym(plat->linux, dl, #name); \
+    ctx->name = wegl_get_proc_address(wc_plat, #name);             \
+    if (!ctx->name)                                                \
+        ctx->name = linux_platform_dl_sym(plat->linux, dl, #name); \
     ok &= ctx->name != NULL;
     GL_FUNCTIONS(LOOKUP)
 #undef LOOKUP
