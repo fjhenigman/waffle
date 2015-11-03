@@ -27,6 +27,7 @@
 
 #include "wcore_error.h"
 #include "wegl_platform.h"
+#include "wegl_util.h"
 
 
 #ifdef WAFFLE_HAS_ANDROID
@@ -72,8 +73,11 @@ wegl_platform_init(struct wegl_platform *self)
         goto error;
     }
 
-#define OPTIONAL_EGL_SYMBOL(function)                                  \
-    self->function = dlsym(self->eglHandle, #function);
+#define OPTIONAL_EGL_SYMBOL(function)                                    \
+    if (self->eglGetProcAddress)                                         \
+        self->function = wegl_get_proc_address(&self->wcore, #function); \
+    if (!self->function)                                                 \
+        self->function = dlsym(self->eglHandle, #function);
 
 #define RETRIEVE_EGL_SYMBOL(function)                                  \
     OPTIONAL_EGL_SYMBOL(function)                                      \
@@ -85,11 +89,8 @@ wegl_platform_init(struct wegl_platform *self)
         goto error;                                                    \
     }
 
-    OPTIONAL_EGL_SYMBOL(eglCreateImageKHR);
-    OPTIONAL_EGL_SYMBOL(eglDestroyImageKHR);
-
+    RETRIEVE_EGL_SYMBOL(eglGetProcAddress); // must be first, to look up others
     RETRIEVE_EGL_SYMBOL(eglMakeCurrent);
-    RETRIEVE_EGL_SYMBOL(eglGetProcAddress);
 
     // display
     RETRIEVE_EGL_SYMBOL(eglGetDisplay);
@@ -111,6 +112,10 @@ wegl_platform_init(struct wegl_platform *self)
     RETRIEVE_EGL_SYMBOL(eglCreateWindowSurface);
     RETRIEVE_EGL_SYMBOL(eglDestroySurface);
     RETRIEVE_EGL_SYMBOL(eglSwapBuffers);
+
+    // optional because used by some derived platforms, not all
+    OPTIONAL_EGL_SYMBOL(eglCreateImageKHR);
+    OPTIONAL_EGL_SYMBOL(eglDestroyImageKHR);
 
 #undef OPTIONAL_EGL_SYMBOL
 #undef RETRIEVE_EGL_SYMBOL
