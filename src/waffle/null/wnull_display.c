@@ -119,12 +119,6 @@ drm_display_create(int fd, struct wgbm_platform *plat)
 
     drm->conn = NULL;
     drmModeResPtr mr = drmModeGetResources(fd);
-    if (!mr) {
-        wcore_errorf(WAFFLE_ERROR_UNKNOWN,
-                     "no display on device (is it a render node?");
-        goto error;
-    }
-
     bool monitor_connected = false;
     for (int i = 0; !drm->crtc && i < mr->count_connectors; ++i) {
         drmModeFreeConnector(drm->conn);
@@ -180,6 +174,19 @@ wnull_display_destroy(struct wcore_display *wc_self)
     return ok;
 }
 
+static bool
+filter(int fd)
+{
+    bool result = false;
+    drmModeResPtr mr = drmModeGetResources(fd);
+    if (mr) {
+        result = mr->count_connectors > 0;
+        prt("fd %d result %d\n", fd, result);
+        drmModeFreeResources(mr);
+    }
+    return result;
+}
+
 struct wcore_display*
 wnull_display_connect(struct wcore_platform *wc_plat,
                       const char *name)
@@ -194,7 +201,7 @@ wnull_display_connect(struct wcore_platform *wc_plat,
     if (name != NULL)
         fd = open(name, O_RDWR | O_CLOEXEC);
     else
-        fd = wgbm_get_default_fd_for_pattern("card[0-9]*");
+        fd = wgbm_get_fd_for_pattern("card[0-9]*", filter);
 
     if (fd < 0) {
         wcore_errorf(WAFFLE_ERROR_UNKNOWN, "open drm file for gbm failed");
