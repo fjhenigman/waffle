@@ -36,6 +36,11 @@ wnull_platform_create(void)
     if (self == NULL)
         return NULL;
 
+    // wgbm_platform_init() overwrites this so get it first
+    const char *egl_platform = getenv("EGL_PLATFORM");
+    if (!egl_platform)
+        egl_platform = "surfaceless";
+
     if (!wgbm_platform_init(&self->wgbm) ||
         !self->wgbm.wegl.eglCreateImageKHR ||
         !self->wgbm.wegl.eglDestroyImageKHR) {
@@ -43,7 +48,8 @@ wnull_platform_create(void)
         return NULL;
     }
 
-    setenv("EGL_PLATFORM", "null", true);
+    // we rely on wgbm_platform_teardown() to unset this
+    setenv("EGL_PLATFORM", egl_platform, true);
 
     self->wgbm.wegl.wcore.vtbl = &wnull_platform_vtbl;
     return &self->wgbm.wegl.wcore;
