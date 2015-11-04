@@ -68,3 +68,6 @@ wgbm_display_fill_native(struct wgbm_display *self,
 
 int
 wgbm_get_default_fd_for_pattern(const char *pattern);
+
+int
+wgbm_get_fd_for_pattern(const char *pattern, bool (*filter)(int));

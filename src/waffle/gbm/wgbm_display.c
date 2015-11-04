@@ -66,7 +66,7 @@ wgbm_display_destroy(struct wcore_display *wc_self)
 }
 
 int
-wgbm_get_default_fd_for_pattern(const char *pattern)
+wgbm_get_fd_for_pattern(const char *pattern, bool (*filter)(int))
 {
     struct udev *ud;
     struct udev_enumerate *en;
@@ -88,16 +88,23 @@ wgbm_get_default_fd_for_pattern(const char *pattern)
         filename = udev_device_get_devnode(device);
         fd = open(filename, O_RDWR | O_CLOEXEC);
         udev_device_unref(device);
-        if (fd >= 0) {
+        if (fd >= 0 && (!filter || filter(fd))) {
             udev_enumerate_unref(en);
             udev_unref(ud);
             return fd;
         }
+        close(fd);
     }
 
     udev_enumerate_unref(en);
     udev_unref(ud);
     return -1;
+}
+
+int
+wgbm_get_default_fd_for_pattern(const char *pattern)
+{
+    return wgbm_get_fd_for_pattern(pattern, NULL);
 }
 
 static int
