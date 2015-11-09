@@ -294,14 +294,16 @@ slbuf_free_glfb(struct slbuf *self)
 {
     struct slbuf_func *f = self->f;
 
-    prt("cleanup fb %u\n",self->glfb);
-    f->glDeleteFramebuffers(1, &self->glfb);
-    CHECK_GL_ERROR
-    f->glDeleteRenderbuffers(1, &self->color);
-    CHECK_GL_ERROR
-    f->glDeleteRenderbuffers(1, &self->depth_stencil);
-    CHECK_GL_ERROR
-    self->glfb = 0;
+    if (self->glfb) {
+        prt("cleanup fb %u\n",self->glfb);
+        f->glDeleteFramebuffers(1, &self->glfb);
+        CHECK_GL_ERROR
+        f->glDeleteRenderbuffers(1, &self->color);
+        CHECK_GL_ERROR
+        f->glDeleteRenderbuffers(1, &self->depth_stencil);
+        CHECK_GL_ERROR
+        self->glfb = 0;
+    }
 gl_error:
     return;
 }
