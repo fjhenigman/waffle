@@ -9,6 +9,7 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <stdlib.h>
 #include <unistd.h>
 
 #include <xf86drm.h>
@@ -196,6 +197,9 @@ wnull_display_connect(struct wcore_platform *wc_plat,
     struct wnull_display *self = wcore_calloc(sizeof(*self));
     if (!self)
         return NULL;
+
+    if (name == NULL)
+        name = getenv("WAFFLE_GBM_DEVICE");
 
     int fd;
     if (name != NULL)
