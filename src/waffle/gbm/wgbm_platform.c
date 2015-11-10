@@ -77,7 +77,7 @@ wgbm_platform_teardown(struct wgbm_platform *self)
 bool
 wgbm_platform_destroy(struct wcore_platform *wc_self)
 {
-    struct wgbm_platform *self = wgbm_platform(wegl_platform(wc_self));
+    struct wgbm_platform *self = wgbm_platform(wc_self);
 
     if (!self)
         return true;
@@ -148,7 +148,7 @@ bool
 wgbm_dl_can_open(struct wcore_platform *wc_self,
                  int32_t waffle_dl)
 {
-    struct wgbm_platform *self = wgbm_platform(wegl_platform(wc_self));
+    struct wgbm_platform *self = wgbm_platform(wc_self);
     return linux_platform_dl_can_open(self->linux, waffle_dl);
 }
 
@@ -157,7 +157,7 @@ wgbm_dl_sym(struct wcore_platform *wc_self,
             int32_t waffle_dl,
             const char *name)
 {
-    struct wgbm_platform *self = wgbm_platform(wegl_platform(wc_self));
+    struct wgbm_platform *self = wgbm_platform(wc_self);
     return linux_platform_dl_sym(self->linux, waffle_dl, name);
 }
 

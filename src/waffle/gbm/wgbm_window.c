@@ -44,7 +44,7 @@ bool
 wgbm_window_destroy(struct wcore_window *wc_self)
 {
     struct wcore_platform *wc_plat = wc_self->display->platform;
-    struct wgbm_platform *plat = wgbm_platform(wegl_platform(wc_plat));
+    struct wgbm_platform *plat = wgbm_platform(wc_plat);
     struct wgbm_window *self = wgbm_window(wc_self);
     bool ok = true;
 
@@ -65,7 +65,7 @@ wgbm_window_create(struct wcore_platform *wc_plat,
                    const intptr_t attrib_list[])
 {
     struct wgbm_display *dpy = wgbm_display(wc_config->display);
-    struct wgbm_platform *plat = wgbm_platform(wegl_platform(wc_plat));
+    struct wgbm_platform *plat = wgbm_platform(wc_plat);
     struct wgbm_window *self;
     uint32_t gbm_format;
     bool ok = true;
@@ -121,7 +121,7 @@ bool
 wgbm_window_swap_buffers(struct wcore_window *wc_self)
 {
     struct wcore_platform *wc_plat = wc_self->display->platform;
-    struct wgbm_platform *plat = wgbm_platform(wegl_platform(wc_plat));
+    struct wgbm_platform *plat = wgbm_platform(wc_plat);
 
     if (!wegl_window_swap_buffers(wc_self))
         return false;

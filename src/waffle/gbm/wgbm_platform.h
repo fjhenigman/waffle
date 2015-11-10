@@ -66,10 +66,19 @@ struct wgbm_platform {
 #undef DECLARE
 };
 
-DEFINE_CONTAINER_CAST_FUNC(wgbm_platform,
-                           struct wgbm_platform,
-                           struct wegl_platform,
-                           wegl)
+static inline struct wgbm_platform*
+wgbm_platform(struct wcore_platform *wc_self)
+{
+    if (wc_self) {
+        struct wegl_platform *wegl_self = container_of(wc_self,
+                                                       struct wegl_platform,
+                                                       wcore);
+        return container_of(wegl_self, struct wgbm_platform, wegl);
+    }
+    else {
+        return NULL;
+    }
+}
 
 bool
 wgbm_platform_init(struct wgbm_platform *self);

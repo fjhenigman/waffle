@@ -45,7 +45,7 @@ wgbm_display_destroy(struct wcore_display *wc_self)
 {
     struct wgbm_display *self = wgbm_display(wc_self);
     struct wcore_platform *wc_plat = wc_self->platform;
-    struct wgbm_platform *plat = wgbm_platform(wegl_platform(wc_plat));
+    struct wgbm_platform *plat = wgbm_platform(wc_plat);
     bool ok = true;
     int fd;
 
@@ -127,7 +127,7 @@ wgbm_display_connect(struct wcore_platform *wc_plat,
                      const char *name)
 {
     struct wgbm_display *self;
-    struct wgbm_platform *plat = wgbm_platform(wegl_platform(wc_plat));
+    struct wgbm_platform *plat = wgbm_platform(wc_plat);
     bool ok = true;
     int fd;
 
