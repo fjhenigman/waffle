@@ -80,7 +80,7 @@ if(waffle_on_linux)
     waffle_pkg_config(gbm gbm)
     waffle_pkg_config(libudev libudev)
 
-    # waffle_has_null
+    # waffle_has_surfaceless
     waffle_pkg_config(libdrm libdrm)
 endif()
 

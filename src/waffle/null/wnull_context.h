@@ -74,30 +74,30 @@ f(void  , glVertexAttribPointer                 , (GLuint index, GLint size, GLe
 f(void  , glViewport                            , (GLint x, GLint y, GLsizei width, GLsizei height)) \
 
 
-struct wnull_context {
+struct surfaceless_context {
     struct wegl_context wegl;
 #define DECLARE(type, name, args) type (*name) args;
     GL_FUNCTIONS(DECLARE)
 #undef DECLARE
 };
 
-static inline struct wnull_context*
-wnull_context(struct wcore_context *wc_self)
+static inline struct surfaceless_context*
+surfaceless_context(struct wcore_context *wc_self)
 {
     if (wc_self) {
         struct wegl_context *wegl_self = container_of(wc_self,
                                                       struct wegl_context,
                                                       wcore);
-        return container_of(wegl_self, struct wnull_context, wegl);
+        return container_of(wegl_self, struct surfaceless_context, wegl);
     } else {
         return NULL;
     }
 }
 
 struct wcore_context*
-wnull_context_create(struct wcore_platform *wc_plat,
-                     struct wcore_config *wc_config,
-                     struct wcore_context *wc_share_ctx);
+surfaceless_context_create(struct wcore_platform *wc_plat,
+                           struct wcore_config *wc_config,
+                           struct wcore_context *wc_share_ctx);
 
 bool
-wnull_context_destroy(struct wcore_context *wc_ctx);
+surfaceless_context_destroy(struct wcore_context *wc_ctx);

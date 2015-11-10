@@ -118,8 +118,8 @@ if(waffle_on_linux)
         add_definitions(-DWAFFLE_HAS_GBM)
     endif()
 
-    if(waffle_has_null)
-        add_definitions(-DWAFFLE_HAS_NULL)
+    if(waffle_has_surfaceless)
+        add_definitions(-DWAFFLE_HAS_SURFACELESS)
     endif()
 
     if(waffle_has_tls)

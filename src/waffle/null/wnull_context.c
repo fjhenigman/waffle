@@ -26,24 +26,24 @@
 #endif
 
 struct wcore_context*
-wnull_context_create(struct wcore_platform *wc_plat,
-                     struct wcore_config *wc_config,
-                     struct wcore_context *wc_share_ctx)
+surfaceless_context_create(struct wcore_platform *wc_plat,
+                           struct wcore_config *wc_config,
+                           struct wcore_context *wc_share_ctx)
 {
     struct wgbm_platform *plat = wgbm_platform(wc_plat);
-    struct wnull_context *ctx = wcore_calloc(sizeof(*ctx));
+    struct surfaceless_context *ctx = wcore_calloc(sizeof(*ctx));
     if (!ctx)
         return NULL;
 
     if (wc_config->attrs.samples > 0) {
         wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_PLATFORM_NULL does not support samples");
+                     "WAFFLE_PLATFORM_SURFACELESS does not support samples");
         goto fail;
     }
 
     if (wc_config->attrs.sample_buffers) {
         wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_PLATFORM_NULL does not support sample buffers");
+                     "WAFFLE_PLATFORM_SURFACELESS does not support sample buffers");
         goto fail;
     }
 
@@ -55,7 +55,7 @@ wnull_context_create(struct wcore_platform *wc_plat,
             break;
         default:
             wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                         "WAFFLE_PLATFORM_NULL api must be GLES2");
+                         "WAFFLE_PLATFORM_SURFACELESS api must be GLES2");
             goto fail;
     }
 
@@ -77,23 +77,23 @@ wnull_context_create(struct wcore_platform *wc_plat,
     return &ctx->wegl.wcore;
 
 fail:
-    wnull_context_destroy(&ctx->wegl.wcore);
+    surfaceless_context_destroy(&ctx->wegl.wcore);
     return NULL;
 }
 
 bool
-wnull_context_destroy(struct wcore_context *wc_ctx)
+surfaceless_context_destroy(struct wcore_context *wc_ctx)
 {
     bool result = true;
 
     if (wc_ctx) {
-        struct wnull_context *self = wnull_context(wc_ctx);
-        struct wnull_display *dpy = wnull_display(wc_ctx->display);
+        struct surfaceless_context *self = surfaceless_context(wc_ctx);
+        struct surfaceless_display *dpy = surfaceless_display(wc_ctx->display);
         prt("destroy context %p\n", self);
 
         if (self == dpy->current_context) {
             prt("destroying current context!\n");
-            wnull_make_current(wc_ctx->display->platform,
+            surfaceless_make_current(wc_ctx->display->platform,
                                wc_ctx->display,
                                NULL, NULL);
         }
@@ -101,7 +101,7 @@ wnull_context_destroy(struct wcore_context *wc_ctx)
         result = wegl_context_teardown(&self->wegl);
 
         // tell the display this context is gone
-        wnull_display_clean(dpy, self, NULL);
+        surfaceless_display_clean(dpy, self, NULL);
 
         free(self);
     }

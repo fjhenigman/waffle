@@ -119,7 +119,7 @@ enum waffle_enum {
         WAFFLE_PLATFORM_GBM                                     = 0x0016,
         WAFFLE_PLATFORM_WGL                                     = 0x0017,
         WAFFLE_PLATFORM_NACL                                    = 0x0018,
-        WAFFLE_PLATFORM_NULL                                    = 0x0019,
+        WAFFLE_PLATFORM_SURFACELESS                             = 0x0019,
 
     // ------------------------------------------------------------------
     // For waffle_config_choose()
@@ -175,11 +175,11 @@ enum waffle_enum {
     WAFFLE_WINDOW_HEIGHT                                        = 0x0311,
     WAFFLE_WINDOW_FULLSCREEN                                    = 0x0312,
 
-    WAFFLE_WINDOW_NULL_SHOW_METHOD                              = 0x0320,
-        WAFFLE_WINDOW_NULL_SHOW_METHOD_FLIP                     = 0x0321,
-        WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_GL                  = 0x0322,
-        WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_I915                = 0x0323,
-    WAFFLE_WINDOW_NULL_VSYNC_WAIT                               = 0x0324,
+    WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD                       = 0x0320,
+        WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_FLIP              = 0x0321,
+        WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_COPY_GL           = 0x0322,
+        WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_COPY_I915         = 0x0323,
+    WAFFLE_WINDOW_SURFACELESS_VSYNC_WAIT                        = 0x0324,
 };
 
 const char*
@@ -319,17 +319,17 @@ struct waffle_x11_egl_config;
 struct waffle_x11_egl_context;
 struct waffle_x11_egl_display;
 struct waffle_x11_egl_window;
-struct waffle_null_config;
-struct waffle_null_context;
-struct waffle_null_display;
-struct waffle_null_window;
+struct waffle_surfaceless_config;
+struct waffle_surfaceless_context;
+struct waffle_surfaceless_display;
+struct waffle_surfaceless_window;
 
 union waffle_native_display {
     struct waffle_gbm_display *gbm;
     struct waffle_glx_display *glx;
     struct waffle_x11_egl_display *x11_egl;
     struct waffle_wayland_display *wayland;
-    struct waffle_null_display *null;
+    struct waffle_surfaceless_display *surfaceless;
 };
 
 union waffle_native_config {
@@ -337,7 +337,7 @@ union waffle_native_config {
     struct waffle_glx_config *glx;
     struct waffle_x11_egl_config *x11_egl;
     struct waffle_wayland_config *wayland;
-    struct waffle_null_config *null;
+    struct waffle_surfaceless_config *surfaceless;
 };
 
 union waffle_native_context {
@@ -345,7 +345,7 @@ union waffle_native_context {
     struct waffle_glx_context *glx;
     struct waffle_x11_egl_context *x11_egl;
     struct waffle_wayland_context *wayland;
-    struct waffle_null_context *null;
+    struct waffle_surfaceless_context *surfaceless;
 };
 
 union waffle_native_window {
@@ -353,7 +353,7 @@ union waffle_native_window {
     struct waffle_glx_window *glx;
     struct waffle_x11_egl_window *x11_egl;
     struct waffle_wayland_window *wayland;
-    struct waffle_null_window *null;
+    struct waffle_surfaceless_window *surfaceless;
 };
 
 // ---------------------------------------------------------------------------

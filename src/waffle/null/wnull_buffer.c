@@ -59,7 +59,7 @@ struct slbuf {
     GLuint texture;
 
     // display on which we are showing or pending
-    struct wnull_display *display;
+    struct surfaceless_display *display;
 };
 
 static GLuint program = 0;
@@ -557,7 +557,7 @@ slbuf_available(struct slbuf *self)
 }
 
 void
-slbuf_set_display(struct slbuf *self, struct wnull_display *display)
+slbuf_set_display(struct slbuf *self, struct surfaceless_display *display)
 {
     self->display = display;
 }

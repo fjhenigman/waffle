@@ -38,23 +38,23 @@ extern "C" {
 
 struct gbm_device;
 
-struct waffle_null_display {
+struct waffle_surfaceless_display {
     struct gbm_device *gbm_device;
     EGLDisplay egl_display;
 };
 
-struct waffle_null_config {
-    struct waffle_null_display display;
+struct waffle_surfaceless_config {
+    struct waffle_surfaceless_display display;
     EGLConfig egl_config;
 };
 
-struct waffle_null_context {
-    struct waffle_null_display display;
+struct waffle_surfaceless_context {
+    struct waffle_surfaceless_display display;
     EGLContext egl_context;
 };
 
-struct waffle_null_window {
-    struct waffle_null_display display;
+struct waffle_surfaceless_window {
+    struct waffle_surfaceless_display display;
     int width;
     int height;
     //TODO could expose 'native buffers' here: gbm_bo, EGLImage, GL framebuffer

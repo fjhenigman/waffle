@@ -49,8 +49,8 @@ struct drm_display {
 };
 
 struct ctx_win {
-    struct wnull_context *ctx;
-    struct wnull_window *win;
+    struct surfaceless_context *ctx;
+    struct surfaceless_window *win;
 };
 
 static drmModeModeInfoPtr
@@ -157,9 +157,9 @@ error:
 }
 
 bool
-wnull_display_destroy(struct wcore_display *wc_self)
+surfaceless_display_destroy(struct wcore_display *wc_self)
 {
-    struct wnull_display *self = wnull_display(wc_self);
+    struct surfaceless_display *self = surfaceless_display(wc_self);
 
     if (!self)
         return true;
@@ -189,12 +189,12 @@ filter(int fd)
 }
 
 struct wcore_display*
-wnull_display_connect(struct wcore_platform *wc_plat,
-                      const char *name)
+surfaceless_display_connect(struct wcore_platform *wc_plat,
+                            const char *name)
 {
     struct wgbm_platform *plat = wgbm_platform(wc_plat);
 
-    struct wnull_display *self = wcore_calloc(sizeof(*self));
+    struct surfaceless_display *self = wcore_calloc(sizeof(*self));
     if (!self)
         return NULL;
 
@@ -237,13 +237,13 @@ wnull_display_connect(struct wcore_platform *wc_plat,
     return &self->wegl.wcore;
 
 error:
-    wnull_display_destroy(&self->wegl.wcore);
+    surfaceless_display_destroy(&self->wegl.wcore);
     return NULL;
 }
 
 bool
-wnull_display_supports_context_api(struct wcore_display *wc_dpy,
-                                   int32_t waffle_context_api)
+surfaceless_display_supports_context_api(struct wcore_display *wc_dpy,
+                                         int32_t waffle_context_api)
 {
     struct wegl_display *dpy = wegl_display(wc_dpy);
     struct wcore_platform *wc_plat = dpy->wcore.platform;
@@ -264,45 +264,45 @@ wnull_display_supports_context_api(struct wcore_display *wc_dpy,
 }
 
 void
-wnull_display_get_size(struct wnull_display *self,
-                       int32_t *width, int32_t *height)
+surfaceless_display_get_size(struct surfaceless_display *self,
+                             int32_t *width, int32_t *height)
 {
     *width = self->drm->width;
     *height = self->drm->height;
 }
 
 void
-wnull_display_fill_native(struct wnull_display *self,
-                          struct waffle_null_display *n_dpy)
+surfaceless_display_fill_native(struct surfaceless_display *self,
+                                struct waffle_surfaceless_display *n_dpy)
 {
     n_dpy->gbm_device = self->drm->gbm_device;
     n_dpy->egl_display = self->wegl.egl;
 }
 
 union waffle_native_display*
-wnull_display_get_native(struct wcore_display *wc_self)
+surfaceless_display_get_native(struct wcore_display *wc_self)
 {
-    struct wnull_display *self = wnull_display(wc_self);
+    struct surfaceless_display *self = surfaceless_display(wc_self);
     union waffle_native_display *n_dpy;
 
-    WCORE_CREATE_NATIVE_UNION(n_dpy, null);
+    WCORE_CREATE_NATIVE_UNION(n_dpy, surfaceless);
     if (n_dpy == NULL)
         return NULL;
 
-    wnull_display_fill_native(self, n_dpy->null);
+    surfaceless_display_fill_native(self, n_dpy->surfaceless);
 
     return n_dpy;
 }
 
 struct gbm_device*
-wnull_display_get_gbm_device(struct wnull_display *self)
+surfaceless_display_get_gbm_device(struct surfaceless_display *self)
 {
     return self->drm->gbm_device;
 }
 
 void
-wnull_display_forget_buffer(struct wnull_display *self,
-                            struct slbuf *buf)
+surfaceless_display_forget_buffer(struct surfaceless_display *self,
+                                  struct slbuf *buf)
 {
     struct drm_display *dpy = self->drm;
 
@@ -330,17 +330,17 @@ wnull_display_forget_buffer(struct wnull_display *self,
 // Caller responsible for freeing *old_win_ptr.
 // Return false for failure and do not modify *old_win_ptr.
 bool
-wnull_display_make_current(struct wnull_display *self,
-                           struct wnull_context *ctx,
-                           struct wnull_window *win,
-                           bool *first,
-                           struct wnull_window ***old_win_ptr)
+surfaceless_display_make_current(struct surfaceless_display *self,
+                                 struct surfaceless_context *ctx,
+                                 struct surfaceless_window *win,
+                                 bool *first,
+                                 struct surfaceless_window ***old_win_ptr)
 {
     assert(self->num_cur <= self->len_cur);
     prt("make_current dpy %p ctx %p win %p\n", self, ctx, win);
     prt("ctx/win list before:\n"); for (int i = 0; i < self->num_cur; ++i) prt("  %p/%p\n", self->cur[i].ctx, self->cur[i].win);
 
-    struct wnull_window **old_win;
+    struct surfaceless_window **old_win;
     if (self->current_context) {
         // allocate the most we might use
         // i.e. length of our list plus one for the terminator
@@ -394,8 +394,8 @@ wnull_display_make_current(struct wnull_display *self,
     prt("ctx/win list after:\n"); for (int i = 0; i < self->num_cur; ++i) prt("  %p/%p\n", self->cur[i].ctx, self->cur[i].win);
     self->current_context = ctx;
     self->current_window = win;
-    struct wnull_platform *plat =
-        wnull_platform(wgbm_platform(self->wegl.wcore.platform));
+    struct surfaceless_platform *plat =
+        surfaceless_platform(wgbm_platform(self->wegl.wcore.platform));
     plat->current_display = self;
 
     assert(self->num_cur <= self->len_cur);
@@ -406,9 +406,9 @@ wnull_display_make_current(struct wnull_display *self,
 // Remove entries from the list of context/window pairs whose
 // context == 'ctx' or whose window == 'win.'
 void
-wnull_display_clean(struct wnull_display *self,
-                    struct wnull_context *ctx,
-                    struct wnull_window *win)
+surfaceless_display_clean(struct surfaceless_display *self,
+                          struct surfaceless_context *ctx,
+                          struct surfaceless_window *win)
 {
     prt("cleaning dpy %p ctx %p win %p\n", self, ctx, win);
     prt("ctx/win list before:\n"); for (int i = 0; i < self->num_cur; ++i) prt("  %p/%p\n", self->cur[i].ctx, self->cur[i].win);
@@ -449,10 +449,10 @@ page_flip_handler(int fd,
 }
 
 bool
-wnull_display_present_buffer(struct wnull_display *self,
-                             struct slbuf *buf,
-                             bool (*copier)(struct slbuf *, struct slbuf *),
-                             bool wait_for_vsync)
+surfaceless_display_present_buffer(struct surfaceless_display *self,
+                                   struct slbuf *buf,
+                                   bool (*copier)(struct slbuf *, struct slbuf *),
+                                   bool wait_for_vsync)
 {
     struct drm_display *dpy = self->drm;
 

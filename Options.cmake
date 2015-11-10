@@ -24,9 +24,9 @@ if(waffle_on_linux)
     endif()
 
     if(gbm_FOUND AND libudev_FOUND AND egl_FOUND AND libdrm_FOUND)
-        set(null_default ON)
+        set(surfaceless_default ON)
     else()
-        set(null_default OFF)
+        set(surfaceless_default OFF)
     endif()
 
     # On Linux, you must enable at least one of the below options.
@@ -40,7 +40,7 @@ if(waffle_on_linux)
     set(nacl_sdk_path "" CACHE STRING "Set nacl_sdk path here")
     set(nacl_version "pepper_39" CACHE STRING "Set NaCl bundle here")
 
-    option(waffle_has_null "Build support for Null" ${null_default})
+    option(waffle_has_surfaceless "Build support for Null" ${surfaceless_default})
 endif()
 
 option(waffle_build_tests "Build tests" ON)

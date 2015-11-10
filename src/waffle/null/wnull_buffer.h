@@ -38,7 +38,7 @@ struct slbuf_param {
     EGLDisplay egl_display;
 };
 
-struct wnull_display;
+struct surfaceless_display;
 struct slbuf;
 
 struct slbuf*
@@ -59,7 +59,7 @@ bool
 slbuf_bind_fb(struct slbuf *self);
 
 void
-slbuf_set_display(struct slbuf *self, struct wnull_display *display);
+slbuf_set_display(struct slbuf *self, struct surfaceless_display *display);
 
 bool
 slbuf_copy_i915(struct slbuf *dst, struct slbuf *src);

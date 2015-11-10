@@ -28,7 +28,7 @@
 #define prt(...)
 #endif
 
-struct wnull_window {
+struct surfaceless_window {
     struct wcore_window wcore;
     bool show;
     intptr_t vsync_wait;
@@ -41,18 +41,18 @@ struct wnull_window {
     bool (*buf_copy)(struct slbuf*, struct slbuf*);
 };
 
-struct wnull_window*
-wnull_window(struct wcore_window *wcore_self)
+struct surfaceless_window*
+surfaceless_window(struct wcore_window *wcore_self)
 {
     if (wcore_self)
-        return container_of(wcore_self, struct wnull_window, wcore);
+        return container_of(wcore_self, struct surfaceless_window, wcore);
     else
         return 0;
 }
 
 // True if the current fb is zero or one of ours.
 static bool
-wnull_window_system_fb(struct wnull_window *self)
+surfaceless_window_system_fb(struct surfaceless_window *self)
 {
     struct slbuf_func *f = &self->func;
     GLint current_fb;
@@ -69,7 +69,7 @@ wnull_window_system_fb(struct wnull_window *self)
 }
 
 bool
-wnull_window_prepare_draw_buffer(struct wnull_window *self)
+surfaceless_window_prepare_draw_buffer(struct surfaceless_window *self)
 {
     struct slbuf *draw = slbuf_get_buffer(self->buf,
                                           ARRAY_SIZE(self->buf),
@@ -83,7 +83,7 @@ wnull_window_prepare_draw_buffer(struct wnull_window *self)
     // This is not an error, so return true.
     // This is to avoid breaking user code which binds a framebuffer
     // and does not expect swap_buffers or make_current to change it.
-    if (!wnull_window_system_fb(self))
+    if (!surfaceless_window_system_fb(self))
         return true;
 
     if (!slbuf_bind_fb(draw))
@@ -94,22 +94,22 @@ wnull_window_prepare_draw_buffer(struct wnull_window *self)
 }
 
 bool
-wnull_window_destroy(struct wcore_window *wc_self)
+surfaceless_window_destroy(struct wcore_window *wc_self)
 {
     if (!wc_self)
         return true;
 
-    struct wnull_window *self = wnull_window(wc_self);
-    struct wnull_display *dpy = wnull_display(wc_self->display);
+    struct surfaceless_window *self = surfaceless_window(wc_self);
+    struct surfaceless_display *dpy = surfaceless_display(wc_self->display);
 
     for (int i = 0; i < ARRAY_SIZE(self->buf); ++i) {
         // tell display buffer is gone
-        wnull_display_forget_buffer(dpy, self->buf[i]);
+        surfaceless_display_forget_buffer(dpy, self->buf[i]);
         slbuf_destroy(self->buf[i]);
     }
 
     // tell display window is gone
-    wnull_display_clean(dpy, NULL, self);
+    surfaceless_display_clean(dpy, NULL, self);
 
     free(self);
     return true;
@@ -124,9 +124,9 @@ env_override(intptr_t *copy, intptr_t *wait)
     if (!over || !over[0] || !over[1]) return;
 
     switch (over[0]) {
-        case 'n': *copy = WAFFLE_WINDOW_NULL_SHOW_METHOD_FLIP; break;
-        case 'i': *copy = WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_I915; break;
-        case 'g': *copy = WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_GL; break;
+        case 'n': *copy = WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_FLIP; break;
+        case 'i': *copy = WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_COPY_I915; break;
+        case 'g': *copy = WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_COPY_GL; break;
     }
 
     switch (over[1]) {
@@ -137,14 +137,14 @@ env_override(intptr_t *copy, intptr_t *wait)
 
 
 struct wcore_window*
-wnull_window_create(struct wcore_platform *wc_plat,
-                    struct wcore_config *wc_config,
-                    int32_t width,
-                    int32_t height,
-                    const intptr_t attrib_list[])
+surfaceless_window_create(struct wcore_platform *wc_plat,
+                          struct wcore_config *wc_config,
+                          int32_t width,
+                          int32_t height,
+                          const intptr_t attrib_list[])
 {
 
-    struct wnull_window *window = wcore_calloc(sizeof(*window));
+    struct surfaceless_window *window = wcore_calloc(sizeof(*window));
     if (!window)
         return NULL;
 
@@ -153,7 +153,7 @@ wnull_window_create(struct wcore_platform *wc_plat,
         goto error;
 
 #if 0
-    // EGL_PLATFORM_NULL is not providing EGL_NATIVE_VISUAL_ID
+    // EGL_PLATFORM_SURFACELESS is not providing EGL_NATIVE_VISUAL_ID
     // so we can't use this.
     window->gbm_format = wgbm_config_get_gbm_format(wc_plat,
                                                     wc_config->display,
@@ -169,9 +169,9 @@ wnull_window_create(struct wcore_platform *wc_plat,
     }
 #endif
 
-    struct wnull_display *dpy = wnull_display(wc_config->display);
+    struct surfaceless_display *dpy = surfaceless_display(wc_config->display);
     if (width == -1 && height == -1)
-        wnull_display_get_size(dpy, &width, &height);
+        surfaceless_display_get_size(dpy, &width, &height);
     window->param.width = width;
     window->param.height = height;
 
@@ -189,18 +189,18 @@ wnull_window_create(struct wcore_platform *wc_plat,
         window->param.depth_stencil_format = GL_DEPTH_COMPONENT32_OES;
 
     //TODO maybe open our own device here, maybe a render node
-    window->param.gbm_device = wnull_display_get_gbm_device(dpy);
+    window->param.gbm_device = surfaceless_display_get_gbm_device(dpy);
 
     if (!wcore_attrib_list_get(attrib_list,
-                               WAFFLE_WINDOW_NULL_VSYNC_WAIT,
+                               WAFFLE_WINDOW_SURFACELESS_VSYNC_WAIT,
                                &window->vsync_wait))
         window->vsync_wait = true;
 
     intptr_t show_method;
     if (!wcore_attrib_list_get(attrib_list,
-                               WAFFLE_WINDOW_NULL_SHOW_METHOD,
+                               WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD,
                                &show_method))
-        show_method = WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_GL;
+        show_method = WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_COPY_GL;
 
     env_override(&show_method, &window->vsync_wait);
 
@@ -211,13 +211,13 @@ wnull_window_create(struct wcore_platform *wc_plat,
 
     window->param.gbm_flags = GBM_BO_USE_RENDERING;
     switch (show_method) {
-        case WAFFLE_WINDOW_NULL_SHOW_METHOD_FLIP:
+        case WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_FLIP:
             prt("copy type: none (direct scanout)\n");
             // Enable scanout from our buffers.
             window->param.gbm_flags |= GBM_BO_USE_SCANOUT;
             window->buf_copy = NULL;
             break;
-        case WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_I915:
+        case WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_COPY_I915:
             prt("copy type: i915\n");
             // Scanout will be from buffers to which we copy our buffers.
             // That copy code may not work when the source and destination
@@ -227,7 +227,7 @@ wnull_window_create(struct wcore_platform *wc_plat,
             window->param.gbm_flags |= GBM_BO_USE_SCANOUT;
             window->buf_copy = slbuf_copy_i915;
             break;
-        case WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_GL:
+        case WAFFLE_WINDOW_SURFACELESS_SHOW_METHOD_COPY_GL:
             prt("copy type: gl\n");
             window->buf_copy = slbuf_copy_gl;
             break;
@@ -246,32 +246,32 @@ wnull_window_create(struct wcore_platform *wc_plat,
     return &window->wcore;
 
 error:
-    wnull_window_destroy(&window->wcore);
+    surfaceless_window_destroy(&window->wcore);
     return NULL;
 }
 
 bool
-wnull_window_show(struct wcore_window *wc_self)
+surfaceless_window_show(struct wcore_window *wc_self)
 {
-    struct wnull_window *self = wnull_window(wc_self);
+    struct surfaceless_window *self = surfaceless_window(wc_self);
     self->show = true;
     return true;
 }
 
 bool
-wnull_window_swap_buffers(struct wcore_window *wc_self)
+surfaceless_window_swap_buffers(struct wcore_window *wc_self)
 {
-    struct wnull_window *self = wnull_window(wc_self);
+    struct surfaceless_window *self = surfaceless_window(wc_self);
     int ok = true;
 
     if (self->show && self->drawbuf && self->param.color) {
-        struct wnull_display *dpy = wnull_display(wc_self->display);
+        struct surfaceless_display *dpy = surfaceless_display(wc_self->display);
 
-        ok &= wnull_display_present_buffer(dpy,
+        ok &= surfaceless_display_present_buffer(dpy,
                                            self->drawbuf,
                                            self->buf_copy,
                                            self->vsync_wait);
-        ok &= wnull_window_prepare_draw_buffer(self);
+        ok &= surfaceless_window_prepare_draw_buffer(self);
     }
 
     return ok;
@@ -281,40 +281,40 @@ wnull_window_swap_buffers(struct wcore_window *wc_self)
 // If one of those was bound, the binding reverts to zero, which suits us
 // very well, since if this window gets used again we need the binding to
 // be zero before we can change it to one of our framebuffers.
-// See wnull_window_prepare_draw_buffer().
+// See surfaceless_window_prepare_draw_buffer().
 static void
-wnull_window_free_gl_resources(struct wnull_window *self)
+surfaceless_window_free_gl_resources(struct surfaceless_window *self)
 {
     for (int i = 0; i < ARRAY_SIZE(self->buf); ++i)
         slbuf_free_gl_resources(self->buf[i]);
 }
 
 bool
-wnull_make_current(struct wcore_platform *wc_plat,
-                   struct wcore_display *wc_dpy,
-                   struct wcore_window *wc_window,
-                   struct wcore_context *wc_ctx)
+surfaceless_make_current(struct wcore_platform *wc_plat,
+                         struct wcore_display *wc_dpy,
+                         struct wcore_window *wc_window,
+                         struct wcore_context *wc_ctx)
 {
     struct wegl_platform *plat = wegl_platform(wc_plat);
-    struct wnull_display *dpy = wnull_display(wc_dpy);
-    struct wnull_context *ctx = wnull_context(wc_ctx);
-    struct wnull_context *old_ctx = dpy->current_context;
-    struct wnull_window *win = wnull_window(wc_window);
+    struct surfaceless_display *dpy = surfaceless_display(wc_dpy);
+    struct surfaceless_context *ctx = surfaceless_context(wc_ctx);
+    struct surfaceless_context *old_ctx = dpy->current_context;
+    struct surfaceless_window *win = surfaceless_window(wc_window);
 
     if (ctx == dpy->current_context && win == dpy->current_window)
         return true;
 
     bool first; // first time the context/window pair will be current?
-    struct wnull_window **old_win = NULL; // list of windows in old context
-    if (!wnull_display_make_current(dpy, ctx, win, &first, &old_win))
+    struct surfaceless_window **old_win = NULL; // list of windows in old context
+    if (!surfaceless_display_make_current(dpy, ctx, win, &first, &old_win))
         return false;
 
     // When the current context is changed to a different one we must
     // clean up any gl resources used in the first context as it may
     // not be seen again.
     if (old_ctx && old_ctx != ctx && old_win)
-        for (struct wnull_window **w = old_win; *w; ++w)
-            wnull_window_free_gl_resources(*w);
+        for (struct surfaceless_window **w = old_win; *w; ++w)
+            surfaceless_window_free_gl_resources(*w);
     free(old_win);
 
     if (!plat->eglMakeCurrent(dpy->wegl.egl,
@@ -330,7 +330,7 @@ wnull_make_current(struct wcore_platform *wc_plat,
 #define ASSIGN(type, name, args) win->func.name = ctx->name;
         GL_FUNCTIONS(ASSIGN);
 #undef ASSIGN
-        ok = wnull_window_prepare_draw_buffer(win);
+        ok = surfaceless_window_prepare_draw_buffer(win);
         if (ok && first) {
             prt("setting viewport\n");
             // For compatibility with eglMakeCurrent and glxMakeCurrent,
@@ -345,19 +345,19 @@ wnull_make_current(struct wcore_platform *wc_plat,
 }
 
 union waffle_native_window*
-wnull_window_get_native(struct wcore_window *wc_self)
+surfaceless_window_get_native(struct wcore_window *wc_self)
 {
-    struct wnull_window *self = wnull_window(wc_self);
-    struct wnull_display *dpy = wnull_display(wc_self->display);
+    struct surfaceless_window *self = surfaceless_window(wc_self);
+    struct surfaceless_display *dpy = surfaceless_display(wc_self->display);
     union waffle_native_window *n_window;
 
-    WCORE_CREATE_NATIVE_UNION(n_window, null);
+    WCORE_CREATE_NATIVE_UNION(n_window, surfaceless);
     if (n_window == NULL)
         return NULL;
 
-    wnull_display_fill_native(dpy, &n_window->null->display);
-    n_window->null->width = self->param.width;
-    n_window->null->height = self->param.height;
+    surfaceless_display_fill_native(dpy, &n_window->surfaceless->display);
+    n_window->surfaceless->width = self->param.width;
+    n_window->surfaceless->height = self->param.height;
 
     return n_window;
 }

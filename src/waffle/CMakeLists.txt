@@ -30,7 +30,7 @@ include_directories(
     ${libdrm_INCLUDE_DIRS}
     ${libudev_INCLUDE_DIRS}
     ${nacl_INCLUDE_DIRS}
-    ${null_INCLUDE_DIRS}
+    ${surfaceless_INCLUDE_DIRS}
     ${wayland-client_INCLUDE_DIRS}
     ${wayland-egl_INCLUDE_DIRS}
     ${x11-xcb_INCLUDE_DIRS}
@@ -55,7 +55,7 @@ if(waffle_on_linux)
             ${libudev_LDFLAGS}
             )
     endif()
-    if(waffle_has_null)
+    if(waffle_has_surfaceless)
         list(APPEND waffle_libdeps
             ${libdrm_LDFLAGS}
             ${libudev_LDFLAGS}
@@ -200,7 +200,7 @@ if(waffle_has_nacl)
         )
 endif()
 
-if(waffle_has_null)
+if(waffle_has_surfaceless)
     list(APPEND waffle_sources
         null/wnull_buffer.c
         null/wnull_context.c
