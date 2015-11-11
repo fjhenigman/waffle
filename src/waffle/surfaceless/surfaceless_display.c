@@ -19,10 +19,10 @@
 
 #include "wgbm_display.h"
 
-#include "wnull_buffer.h"
-#include "wnull_context.h"
-#include "wnull_display.h"
-#include "wnull_platform.h"
+#include "surfaceless_buffer.h"
+#include "surfaceless_context.h"
+#include "surfaceless_display.h"
+#include "surfaceless_platform.h"
 
 #define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
 

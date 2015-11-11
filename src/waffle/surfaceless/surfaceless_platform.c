@@ -22,10 +22,10 @@
 #include "wgbm_config.h"
 #include "wgbm_platform.h"
 
-#include "wnull_context.h"
-#include "wnull_display.h"
-#include "wnull_platform.h"
-#include "wnull_window.h"
+#include "surfaceless_context.h"
+#include "surfaceless_display.h"
+#include "surfaceless_platform.h"
+#include "surfaceless_window.h"
 
 static const struct wcore_platform_vtbl surfaceless_platform_vtbl;
 

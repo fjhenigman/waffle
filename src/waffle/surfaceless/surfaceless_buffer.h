@@ -10,7 +10,7 @@
 #include <EGL/eglext.h>
 
 #include "wgbm_platform.h"
-#include "wnull_context.h"
+#include "surfaceless_context.h"
 
 #define EGL_FUNCTIONS(f) \
 f(EGLImageKHR, eglCreateImageKHR , (EGLDisplay dpy, EGLContext ctx, EGLenum target, EGLClientBuffer buffer, const EGLint *attrib_list)) \

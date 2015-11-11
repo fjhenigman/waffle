@@ -6,9 +6,9 @@
 
 #pragma once
 
-#include "waffle_null.h"
+#include "waffle_surfaceless.h"
 #include "wegl_display.h"
-#include "wnull_buffer.h"
+#include "surfaceless_buffer.h"
 
 struct wcore_platform;
 struct surfaceless_window;

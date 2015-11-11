@@ -14,9 +14,9 @@
 
 #include "wgbm_platform.h"
 
-#include "wnull_context.h"
-#include "wnull_display.h"
-#include "wnull_window.h"
+#include "surfaceless_context.h"
+#include "surfaceless_display.h"
+#include "surfaceless_window.h"
 
 #if 0
 #include <stdio.h>

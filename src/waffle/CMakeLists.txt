@@ -17,7 +17,7 @@ include_directories(
     glx
     linux
     nacl
-    null
+    surfaceless
     wayland
     wgl
     x11
@@ -202,11 +202,11 @@ endif()
 
 if(waffle_has_surfaceless)
     list(APPEND waffle_sources
-        null/wnull_buffer.c
-        null/wnull_context.c
-        null/wnull_display.c
-        null/wnull_platform.c
-        null/wnull_window.c
+        surfaceless/surfaceless_buffer.c
+        surfaceless/surfaceless_context.c
+        surfaceless/surfaceless_display.c
+        surfaceless/surfaceless_platform.c
+        surfaceless/surfaceless_window.c
     )
 endif()
 

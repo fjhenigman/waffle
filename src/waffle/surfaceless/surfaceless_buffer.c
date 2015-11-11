@@ -19,7 +19,7 @@
 #include <drm_fourcc.h>
 
 #include "wcore_util.h"
-#include "wnull_buffer.h"
+#include "surfaceless_buffer.h"
 
 #if 0
 #include <stdio.h>
