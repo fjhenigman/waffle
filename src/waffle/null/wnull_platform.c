@@ -6,7 +6,6 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <dlfcn.h>
 
 #include "api_priv.h"
 
@@ -14,14 +13,12 @@
 
 #include "wcore_error.h"
 
-#include "wegl_config.h"
 #include "wegl_context.h"
-#include "wegl_platform.h"
 #include "wegl_util.h"
 
-#include "wgbm_config.h"
 #include "wgbm_platform.h"
 
+#include "wnull_config.h"
 #include "wnull_context.h"
 #include "wnull_display.h"
 #include "wnull_platform.h"
@@ -210,9 +207,9 @@ static const struct wcore_platform_vtbl wnull_platform_vtbl = {
     },
 
     .config = {
-        .choose = wegl_config_choose,
-        .destroy = wegl_config_destroy,
-        .get_native = wgbm_config_get_native,
+        .choose = wnull_config_choose,
+        .destroy = wnull_config_destroy,
+        .get_native = wnull_config_get_native,
     },
 
     .context = {

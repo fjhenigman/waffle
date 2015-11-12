@@ -45,7 +45,9 @@ struct waffle_null_display {
 
 struct waffle_null_config {
     struct waffle_null_display display;
-    EGLConfig egl_config;
+    uint32_t gbm_format;
+    uint32_t drm_format;
+    unsigned depth_stencil_format;
 };
 
 struct waffle_null_context {

@@ -14,6 +14,7 @@
 #include "wgbm_config.h"
 
 #include "wnull_buffer.h"
+#include "wnull_config.h"
 #include "wnull_context.h"
 #include "wnull_display.h"
 #include "wnull_platform.h"
@@ -152,41 +153,20 @@ wnull_window_create(struct wcore_platform *wc_plat,
     if (!wcore_window_init(&window->wcore, wc_config))
         goto error;
 
-#if 0
-    // EGL_PLATFORM_NULL is not providing EGL_NATIVE_VISUAL_ID
-    // so we can't use this.
-    window->gbm_format = wgbm_config_get_gbm_format(wc_plat,
-                                                    wc_config->display,
-                                                    wc_config);
-#else
-    if (wc_config->attrs.alpha_size <= 0)
-        window->param.gbm_format = GBM_FORMAT_XRGB8888;
-    else if (wc_config->attrs.alpha_size <= 8)
-        window->param.gbm_format = GBM_FORMAT_ARGB8888;
-    else {
-        wcore_errorf(WAFFLE_ERROR_UNKNOWN, "unexpected alpha size");
-        goto error;
-    }
-#endif
-
     struct wnull_display *dpy = wnull_display(wc_config->display);
     if (width == -1 && height == -1)
         wnull_display_get_size(dpy, &width, &height);
     window->param.width = width;
     window->param.height = height;
 
+    struct wnull_config *config = wnull_config(wc_config);
+    window->param.gbm_format = config->gbm_format;
+    window->param.drm_format = config->drm_format;
+    window->param.depth_stencil_format = config->depth_stencil_format;
+
     window->param.color = wc_config->attrs.rgba_size > 0;
     window->param.depth = wc_config->attrs.depth_size > 0;
     window->param.stencil = wc_config->attrs.stencil_size > 0;
-
-    if (wc_config->attrs.stencil_size)
-        window->param.depth_stencil_format = GL_DEPTH24_STENCIL8_OES;
-    else if (wc_config->attrs.depth_size <= 16)
-        window->param.depth_stencil_format = GL_DEPTH_COMPONENT16;
-    else if (wc_config->attrs.depth_size <= 24)
-        window->param.depth_stencil_format = GL_DEPTH_COMPONENT24_OES;
-    else
-        window->param.depth_stencil_format = GL_DEPTH_COMPONENT32_OES;
 
     //TODO maybe open our own device here, maybe a render node
     window->param.gbm_device = wnull_display_get_gbm_device(dpy);
@@ -209,6 +189,15 @@ wnull_window_create(struct wcore_platform *wc_plat,
     else
         prt("vsync wait: no\n");
 
+    struct wgbm_platform *plat = wgbm_platform(wc_plat);
+#define ASSIGN(type, name, args) window->func.name = plat->name;
+    GBM_FUNCTIONS(ASSIGN);
+#undef ASSIGN
+
+#define ASSIGN(type, name, args) window->func.name = plat->wegl.name;
+    EGL_FUNCTIONS(ASSIGN);
+#undef ASSIGN
+
     window->param.gbm_flags = GBM_BO_USE_RENDERING;
     switch (show_method) {
         case WAFFLE_WINDOW_NULL_SHOW_METHOD_FLIP:
@@ -216,6 +205,15 @@ wnull_window_create(struct wcore_platform *wc_plat,
             // Enable scanout from our buffers.
             window->param.gbm_flags |= GBM_BO_USE_SCANOUT;
             window->buf_copy = NULL;
+
+            // When the config was chosen, we didn't know if we needed
+            // scanout, but check that now.
+            if (!slbuf_get_format(&window->param, &window->func, false)) {
+                wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
+                             "WAFFLE_WINDOW_NULL_SHOW_METHOD_FLIP"
+                             " not supported for window format");
+                goto error;
+            }
             break;
         case WAFFLE_WINDOW_NULL_SHOW_METHOD_COPY_I915:
             prt("copy type: i915\n");
@@ -233,15 +231,6 @@ wnull_window_create(struct wcore_platform *wc_plat,
             break;
     }
     window->param.egl_display = dpy->wegl.egl;
-
-    struct wgbm_platform *plat = wgbm_platform(wc_plat);
-#define ASSIGN(type, name, args) window->func.name = plat->name;
-    GBM_FUNCTIONS(ASSIGN);
-#undef ASSIGN
-
-#define ASSIGN(type, name, args) window->func.name = plat->wegl.name;
-    EGL_FUNCTIONS(ASSIGN);
-#undef ASSIGN
 
     return &window->wcore;
 

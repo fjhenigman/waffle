@@ -19,9 +19,6 @@ struct wnull_display {
     struct wnull_context *current_context;
     struct wnull_window *current_window;
 
-    struct slbuf_param param;
-    struct slbuf_func func;
-
     struct drm_display *drm;
 
     struct ctx_win *cur; // list of context/window pairs which have been current

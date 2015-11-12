@@ -14,6 +14,7 @@
 
 #include <xf86drm.h>
 #include <xf86drmMode.h>
+#include <drm_fourcc.h>
 
 #include "wcore_error.h"
 
@@ -42,7 +43,12 @@ struct drm_display {
     int32_t width;
     int32_t height;
     bool setcrtc_done;
+
+    // scanout buffers
+    struct slbuf_param param;
+    struct slbuf_func func;
     struct slbuf *scanout[2]; // front & back
+
     struct slbuf *screen_buffer; // on screen
     struct slbuf *pending_buffer; // scheduled flip to this
     bool flip_pending;
@@ -137,6 +143,14 @@ drm_display_create(int fd, struct wgbm_platform *plat)
     }
     drmModeFreeResources(mr);
 
+#define ASSIGN(type, name, args) drm->func.name = plat->name;
+    GBM_FUNCTIONS(ASSIGN);
+#undef ASSIGN
+
+#define ASSIGN(type, name, args) drm->func.name = plat->wegl.name;
+    EGL_FUNCTIONS(ASSIGN);
+#undef ASSIGN
+
     if (drm->crtc) {
         drm->width = drm->mode->hdisplay;
         drm->height = drm->mode->vdisplay;
@@ -219,6 +233,7 @@ wnull_display_connect(struct wcore_platform *wc_plat,
     if (!wegl_display_init(&self->wegl, wc_plat, (intptr_t)EGL_DEFAULT_DISPLAY))
         goto error;
 
+/*XXX
     self->param.width = self->drm->width;
     self->param.height = self->drm->height;
     self->param.color = true;
@@ -232,6 +247,7 @@ wnull_display_connect(struct wcore_platform *wc_plat,
 #define ASSIGN(type, name, args) self->func.name = plat->wegl.name;
     EGL_FUNCTIONS(ASSIGN);
 #undef ASSIGN
+*/
 
     prt("create display %p\n",self);
     return &self->wegl.wcore;
@@ -386,7 +402,7 @@ wnull_display_make_current(struct wnull_display *self,
     }
 
     if (ctx) {
-#define ASSIGN(type, name, args) self->func.name = ctx->name;
+#define ASSIGN(type, name, args) self->drm->func.name = ctx->name;
         GL_FUNCTIONS(ASSIGN);
 #undef ASSIGN
     }
@@ -460,7 +476,7 @@ wnull_display_present_buffer(struct wnull_display *self,
         // no monitor
         return true;
 
-    int fd = self->func.gbm_device_get_fd(dpy->gbm_device);
+    int fd = dpy->func.gbm_device_get_fd(dpy->gbm_device);
     struct pollfd pfd = { fd, POLLIN };
     if (poll(&pfd, 1, 0) < 0) {
         prt("poll failed %d\n", errno);
@@ -493,16 +509,31 @@ wnull_display_present_buffer(struct wnull_display *self,
     struct slbuf *show = buf;
 
     if (copier) {
-        self->param.gbm_flags = GBM_BO_USE_SCANOUT;
-        if (copier == slbuf_copy_gl)
-            self->param.gbm_flags |= GBM_BO_USE_RENDERING;
-
-        //TODO if format changes we should probably recreate scanout buffers
-        self->param.gbm_format = slbuf_gbm_format(buf);
+        dpy->param.gbm_flags = GBM_BO_USE_SCANOUT;
+        struct slbuf_param *p = *(struct slbuf_param **)buf;//XXX
+        if (copier == slbuf_copy_gl) {
+            dpy->param.gbm_flags |= GBM_BO_USE_RENDERING;
+            dpy->param.alpha_size = 0;
+            // Try to display at the least the same color depth as 'buf'
+            // but we take what we can get.
+            dpy->param.red_size   = p->red_size;
+            dpy->param.green_size = p->green_size;
+            dpy->param.blue_size  = p->blue_size;
+            assert(slbuf_get_format(&dpy->param, &dpy->func, true));
+        }
+        else if (copier == slbuf_copy_i915) {
+            // Use same format as 'buf' because the copier cannot
+            // translate from one format to another.
+            dpy->param.gbm_format = p->gbm_format;
+            dpy->param.drm_format = p->drm_format;
+        }
+        //TODO: Once scanout buffers are created they never change so
+        // they might be inappropriate if 'buf' is a different kind
+        // than was shown the first time.
         show = slbuf_get_buffer(dpy->scanout,
                                 ARRAY_SIZE(dpy->scanout),
-                                &self->param,
-                                &self->func);
+                                &dpy->param,
+                                &dpy->func);
         if (!show) {
             prt("no back buffer\n");
             return false;

@@ -30,6 +30,23 @@
 
 #define MIN(a,b) ((a)<(b)?(a):(b))
 
+#define ARRAY_SIZE(a) (sizeof(a)/sizeof((a)[0]))
+
+static struct format {
+    intptr_t alpha_size;
+    intptr_t red_size;
+    intptr_t green_size;
+    intptr_t blue_size;
+    uint32_t gbm_format;
+    uint32_t drm_format;
+} formats[] = {
+    {  0,  5,  6,  5, GBM_FORMAT_RGB565,      DRM_FORMAT_RGB565      },
+    {  0,  8,  8,  8, GBM_FORMAT_XRGB8888,    DRM_FORMAT_XRGB8888    },
+    {  8,  8,  8,  8, GBM_FORMAT_ARGB8888,    DRM_FORMAT_ARGB8888    },
+    {  0, 10, 10, 10, GBM_FORMAT_XRGB2101010, DRM_FORMAT_XRGB2101010 },
+    {  2, 10, 10, 10, GBM_FORMAT_ARGB2101010, DRM_FORMAT_ARGB2101010 },
+};
+
 #define CHECK_GL_ERROR if (gl_error(f->glGetError(), __LINE__)) goto gl_error;
 
 static bool
@@ -39,6 +56,37 @@ gl_error(GLenum error, int line)
         return false;
     prt("gl error %x @ line %d\n", (int) error, line);
     return true;
+}
+
+bool
+slbuf_get_format(struct slbuf_param *param,
+                 struct slbuf_func *func,
+                 bool smaller_ok)
+{
+    const struct format *format = NULL;
+    bool big_enough;
+
+    for (int i = 0; i < ARRAY_SIZE(formats); ++i) {
+        big_enough = param->alpha_size <= formats[i].alpha_size &&
+                     param->red_size   <= formats[i].red_size &&
+                     param->green_size <= formats[i].green_size &&
+                     param->blue_size  <= formats[i].blue_size;
+        if (func->gbm_device_is_format_supported(param->gbm_device,
+                                                 formats[i].gbm_format,
+                                                 param->gbm_flags)) {
+            format = formats + i;
+            if (big_enough)
+                break;
+        }
+    }
+
+    if (format && (big_enough || smaller_ok)) {
+        param->gbm_format = format->gbm_format;
+        param->drm_format = format->drm_format;
+        return true;
+    }
+
+    return false;
 }
 
 struct slbuf {
@@ -112,14 +160,19 @@ bool
 slbuf_get_drmfb(struct slbuf *self, uint32_t *fb)
 {
     if (!self->has_drmfb) {
-        if (drmModeAddFB(slbuf_drmfd(self),
+        uint32_t handles[4] = { slbuf_handle(self) };
+        uint32_t pitches[4] = { slbuf_stride(self) };
+        uint32_t offsets[4] = { 0 };
+        if (drmModeAddFB2(slbuf_drmfd(self),
                           self->p->width,
                           self->p->height,
-                          24, 32,
-                          slbuf_stride(self),
-                          slbuf_handle(self),
-                          &self->drmfb)) {
-            prt("drmModeAddFB failed\n");
+                          self->p->drm_format,
+                          handles,
+                          pitches,
+                          offsets,
+                          &self->drmfb,
+                          0)) {
+            prt("drmModeAddFB2 failed\n");
             return false;
         }
         self->has_drmfb = true;
@@ -571,20 +624,7 @@ slbuf_gbm_format(struct slbuf *self)
 uint32_t
 slbuf_drm_format(struct slbuf *self)
 {
-    switch(slbuf_gbm_format(self)) {
-        case GBM_FORMAT_XRGB8888:
-            return DRM_FORMAT_XRGB8888;
-        case GBM_FORMAT_ARGB8888:
-            return DRM_FORMAT_ARGB8888;
-        case GBM_FORMAT_XRGB2101010:
-            return DRM_FORMAT_XRGB2101010;
-        case GBM_FORMAT_ARGB2101010:
-            return DRM_FORMAT_ARGB2101010;
-        case GBM_FORMAT_RGB565:
-            return DRM_FORMAT_RGB565;
-    }
-    assert(!"unexpected gbm format");
-    return 0;
+    return self->p->drm_format;
 }
 
 // Return the first buffer in 'array' into which we can draw (because it

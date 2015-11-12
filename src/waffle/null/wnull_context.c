@@ -35,36 +35,14 @@ wnull_context_create(struct wcore_platform *wc_plat,
     if (!ctx)
         return NULL;
 
-    if (wc_config->attrs.samples > 0) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_PLATFORM_NULL does not support samples");
-        goto fail;
-    }
-
-    if (wc_config->attrs.sample_buffers) {
-        wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                     "WAFFLE_PLATFORM_NULL does not support sample buffers");
-        goto fail;
-    }
-
-    int32_t dl;
-    switch (wc_config->attrs.context_api) {
-        //TODO could some other APIs work?
-        case WAFFLE_CONTEXT_OPENGL_ES2:
-            dl = WAFFLE_DL_OPENGL_ES2;
-            break;
-        default:
-            wcore_errorf(WAFFLE_ERROR_BAD_ATTRIBUTE,
-                         "WAFFLE_PLATFORM_NULL api must be GLES2");
-            goto fail;
-    }
-
     bool ok = true;
 
 #define LOOKUP(type, name, args) \
     ctx->name = wegl_get_proc_address(wc_plat, #name);             \
     if (!ctx->name)                                                \
-        ctx->name = linux_platform_dl_sym(plat->linux, dl, #name); \
+        ctx->name = linux_platform_dl_sym(plat->linux,             \
+                                          WAFFLE_DL_OPENGL_ES2,    \
+                                          #name);                  \
     ok &= ctx->name != NULL;
     GL_FUNCTIONS(LOOKUP)
 #undef LOOKUP

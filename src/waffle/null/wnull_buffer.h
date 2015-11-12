@@ -12,6 +12,7 @@
 #include "wgbm_platform.h"
 #include "wnull_context.h"
 
+//XXX can we move all function lists to here?
 #define EGL_FUNCTIONS(f) \
 f(EGLImageKHR, eglCreateImageKHR , (EGLDisplay dpy, EGLContext ctx, EGLenum target, EGLClientBuffer buffer, const EGLint *attrib_list)) \
 f(EGLBoolean , eglDestroyImageKHR, (EGLDisplay dpy, EGLImageKHR image)) \
@@ -28,12 +29,20 @@ struct slbuf_func {
 struct slbuf_param {
     uint32_t width;
     uint32_t height;
+
+    uint32_t alpha_size;
+    uint32_t red_size;
+    uint32_t green_size;
+    uint32_t blue_size;
+
     bool color, depth, stencil;
+
     GLenum depth_stencil_format;
 
     struct gbm_device *gbm_device;
     uint32_t gbm_format;
     uint32_t gbm_flags;
+    uint32_t drm_format;
 
     EGLDisplay egl_display;
 };
@@ -41,6 +50,18 @@ struct slbuf_param {
 struct wnull_display;
 struct slbuf;
 
+bool
+slbuf_get_format(struct slbuf_param *param,
+                 struct slbuf_func *func,
+                 bool smaller_ok);
+
+/// @brief Get buffer from list or create if necessary.
+///
+/// Return the first buffer in 'array' into which we can draw (because it
+/// is not currently, nor pending to go, on screen).
+/// If there is no available buffer but there is an empty (NULL) slot in
+/// the array, a new buffer will be created with the given parameters and
+/// function table.
 struct slbuf*
 slbuf_get_buffer(struct slbuf *array[],
                  unsigned len,
