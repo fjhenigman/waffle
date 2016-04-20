@@ -267,6 +267,7 @@ struct options {
     enum format {
         FORMAT_ORIGINAL,
         FORMAT_JSON,
+        FORMAT_JSON2,
     } format;
 
     bool context_forward_compatible;
@@ -409,6 +410,8 @@ parse_args(int argc, char *argv[], struct options *opts)
                     opts->format = FORMAT_ORIGINAL;
                 } else if (strcmp(optarg, "json") == 0) {
                     opts->format = FORMAT_JSON;
+                } else if (strcmp(optarg, "json2") == 0) {
+                    opts->format = FORMAT_JSON2;
                 } else {
                     usage_error_printf("'%s' is not a valid format", optarg);
                 }
@@ -695,6 +698,18 @@ print_json(const struct options *opts)
     printf("}\n");
 
     return true;
+}
+
+static bool
+print_json2(struct waffle_display *dpy)
+{
+    char *info = waffle_display_info_json(dpy, false);
+    if (info) {
+        printf("%s\n", info);
+        free(info);
+        return true;
+    }
+    return false;
 }
 
 /// @brief Print out information about the context that was created.
@@ -1281,6 +1296,9 @@ main(int argc, char **argv)
             break;
         case FORMAT_JSON:
             ok = print_json(&opts);
+            break;
+        case FORMAT_JSON2:
+            ok = print_json2(dpy);
             break;
     }
 
