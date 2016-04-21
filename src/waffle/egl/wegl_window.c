@@ -57,6 +57,7 @@ wegl_window_init(struct wegl_window *window,
         EGL_NONE,
     };
 
+    window->egl = 0; return true;
     window->egl = plat->eglCreateWindowSurface(dpy->egl,
                                                config->egl,
                                                (EGLNativeWindowType)
